@@ -1,0 +1,5 @@
+bases:
+  - ../../default
+
+patchesStrategicMerge:
+  - manager_kind.yaml
