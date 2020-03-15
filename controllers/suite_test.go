@@ -32,6 +32,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 	secretsv1 "github.com/contentful-labs/k8s-secret-syncer/api/v1"
+	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -170,6 +171,8 @@ var _ = BeforeSuite(func(done Done) {
 			return &smSvc, nil
 		},
 		RoleValidator: &mockRoleValidator{},
+		gauges:        map[string]prometheus.Gauge{},
+		sync_state:    map[string]bool{},
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
