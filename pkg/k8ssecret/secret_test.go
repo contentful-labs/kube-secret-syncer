@@ -357,6 +357,39 @@ func TestGenerateSecret(t *testing.T) {
 			},
 			want: nil,
 		},
+		{
+			name: "AwsSecret should fail if getSecretvalue Fails",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("foo"),
+								ValueFrom: &secretsv1.ValueFrom{
+									Template: _s(`
+{{- $cfg := ""  # INVALID
+{{- range $secretName, $_ := filterByTagKey .Secrets "tag1" -}}
+  {{- $secretValue := getSecretValue $secretName -}}
+  {{- $cfg = printf "%shost=%s user=%s password=%s\n" $cfg $secretValue.host $secretValue.user $secretValue.password -}}
+{{- end -}}
+{{- $cfg -}}
+`),
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {Tags: map[string]string{"tag1": ""}}, "cachedSecret2": {}},
+				secretValueGetter: mockgetSecretValue,
+			},
+			want: nil,
+		},
 	}
 
 	for _, test := range testCases {
