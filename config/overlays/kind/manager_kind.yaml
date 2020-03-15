@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller
+spec:
+  template:
+    spec:
+      containers:
+      - command:
+        env:
+        - name: AWS_REGION
+          value: eu-west-1 
+        - name: POLL_INTERVAL_SEC
+          value: "15"
+        image: k8s-secret-syncer:kind
+        name: k8s-secret-syncer
+        envFrom:
+        - configMapRef:
+            name: aws-creds
