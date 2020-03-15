@@ -239,16 +239,16 @@ func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}()
 
 	r.gauges = map[string]prometheus.Gauge{
-		"sm_secrets_success": prometheus.NewGauge(
+		"secret_sync_success": prometheus.NewGauge(
 			prometheus.GaugeOpts{
-				Name: "sm_secrets_success",
-				Help: "Number of AWS Secrets Manager secrets synced",
+				Name: "secret_sync_success",
+				Help: "Number of SyncedSecrets successfully syncing",
 			},
 		),
-		"sm_secrets_fail": prometheus.NewGauge(
+		"secret_sync_failures": prometheus.NewGauge(
 			prometheus.GaugeOpts{
-				Name: "sm_secrets_failures",
-				Help: "Number of AWS Secrets Manager secrets failing to sync",
+				Name: "secret_sync_failures",
+				Help: "Number of SyncedSecrers failing to sync",
 			},
 		),
 	}
