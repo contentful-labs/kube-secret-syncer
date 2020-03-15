@@ -79,8 +79,9 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	var cs secretsv1.SyncedSecret
 	const defaultReconcileInterval = 120
 
-	log := r.Log.WithValues(LogFieldSyncedSecret, req.NamespacedName.String())
+	defer r.updatePrometheus(r.sync_state)
 
+	log := r.Log.WithValues(LogFieldSyncedSecret, req.NamespacedName.String())
 	if err = r.Get(r.Ctx, req.NamespacedName, &cs); err != nil {
 		log.Info("unable to fetch SyncedSecret, was maybe deleted")
 		return ctrl.Result{}, nil
@@ -140,7 +141,6 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	}
 
 	r.sync_state[cs.Name] = true
-	r.updatePrometheus(r.sync_state)
 
 	return ctrl.Result{RequeueAfter: defaultReconcileInterval * time.Second}, nil
 }
