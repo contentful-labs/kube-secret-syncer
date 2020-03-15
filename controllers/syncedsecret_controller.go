@@ -19,7 +19,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"strconv"
 	"sync"
 	"time"
@@ -57,6 +59,9 @@ type SyncedSecretReconciler struct {
 	RoleValidator RoleValidator
 	Log           logr.Logger
 	wg            sync.WaitGroup
+
+	gauges     map[string]prometheus.Gauge
+	sync_state map[string]bool
 }
 
 const (
@@ -91,10 +96,12 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 
 	allowed, err := r.RoleValidator.IsWhitelisted(*cs.Spec.IAMRole, cs.Namespace)
 	if !allowed {
+		r.sync_state[cs.Name] = false
 		log.Error(err, "role not allowed by namespace", "role", *cs.Spec.IAMRole, "namespace", cs.Namespace)
 		return ctrl.Result{}, errors.WithMessagef(err, "role %s not allowed in namespace %s", *cs.Spec.IAMRole, cs.Namespace)
 	}
 	if err != nil {
+		r.sync_state[cs.Name] = false
 		log.Error(err, "failed verifying if IAMRole is whitelisted", "role", *cs.Spec.IAMRole, "namespace", cs.Namespace)
 		return ctrl.Result{}, errors.WithMessagef(err, "failed verifying role %s: %s", *cs.Spec.IAMRole, err)
 	}
@@ -103,12 +110,14 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	err = r.Get(r.Ctx, K8SSecretName, &k8sSecret)
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
+			r.sync_state[cs.Name] = false
 			return ctrl.Result{}, errors.WithMessagef(err, "error retrieving k8s secret %s", K8SSecretName)
 		}
 
 		// Create the k8S secret if it was not found
 		createdSecret, err := r.createK8SSecret(r.Ctx, &cs)
 		if err != nil {
+			r.sync_state[cs.Name] = false
 			return ctrl.Result{}, errors.WithMessagef(err, "failed creating K8S Secret %s", K8SSecretName)
 		}
 		log.Info("created k8s secret", "K8SSecret", createdSecret)
@@ -116,6 +125,7 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		// Update the K8S Secret if it already exists
 		updatedSecret, err := r.updateK8SSecret(r.Ctx, &cs)
 		if err != nil {
+			r.sync_state[cs.Name] = false
 			return ctrl.Result{}, errors.WithMessagef(err, "failed updating k8s secret %s", K8SSecretName)
 		}
 		if !k8ssecret.K8SSecretsEqual(k8sSecret, *updatedSecret) {
@@ -124,8 +134,13 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	}
 
 	if err = r.updateCSStatus(r.Ctx, &cs); err != nil {
+		r.sync_state[cs.Name] = false
 		log.Error(err, "failed to update SyncedSecret status")
+		return ctrl.Result{}, errors.WithMessagef(err, "failed to update SyncedSecret status for %s", K8SSecretName)
 	}
+
+	r.sync_state[cs.Name] = true
+	r.updatePrometheus(r.sync_state)
 
 	return ctrl.Result{RequeueAfter: defaultReconcileInterval * time.Second}, nil
 }
@@ -214,11 +229,6 @@ func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	errs := make(chan error)
-
-	if r.poller, err = secretsmanager.New(interval, errs, r.GetSMClient); err != nil {
-		return err
-	}
-
 	go func() {
 		r.wg.Add(1)
 		defer r.wg.Done()
@@ -228,7 +238,50 @@ func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		}
 	}()
 
+	r.gauges = map[string]prometheus.Gauge{
+		"sm_secrets_success": prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Name: "sm_secrets_success",
+				Help: "Number of AWS Secrets Manager secrets synced",
+			},
+		),
+		"sm_secrets_fail": prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Name: "sm_secrets_failures",
+				Help: "Number of AWS Secrets Manager secrets failing to sync",
+			},
+		),
+	}
+
+	for _, metric := range r.gauges {
+		metrics.Registry.MustRegister(metric)
+	}
+
+	if r.poller, err = secretsmanager.New(interval, errs, r.GetSMClient); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&secretsv1.SyncedSecret{}).
 		Complete(r)
+}
+
+func (r *SyncedSecretReconciler) updatePrometheus(syncState map[string]bool) {
+	success := 0
+	failures := 0
+
+	for _, state := range syncState {
+		if state == true {
+			success++
+		} else {
+			failures++
+		}
+	}
+
+	if _, ok := r.gauges["secret_sync_success"]; ok {
+		r.gauges["secret_sync_success"].Set(float64(success))
+	}
+	if _, ok := r.gauges["secret_sync_failures"]; ok {
+		r.gauges["secret_sync_failures"].Set(float64(success))
+	}
 }
