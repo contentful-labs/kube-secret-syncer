@@ -1,36 +1,33 @@
 # K8s-secret-syncer
 
 K8s-Secrets-syncer is a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) developed
-using [the Kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder) that maps secrets stored in AWS Secret
-Manager to secrets in Kubernetes.
+using [the Kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder). It allows the user to create a mapping between secrets stored in AWS SecretsManager and Secrets in Kubernetes. It keeps the values in Kuberenets Secret resources definitions in sync with the values in AWS SecretsManager. 
 
-When a secret is updated in Secrets Manager, k8s-secret-syncer will automatically update the value of the mapped secret
-in Kubernetes. This might take a few minutes, depending on the configured polling interval.
+The mapping is described in a Kubernetes custom resource. The operator polls AWS for changes in secret values in regular (confugralble) intervals, and upon detected changes, it updates the Kubernetes Secrets. This might take a few minutes, depending on the configured polling interval. The syncing only work is this direction. 
 
-__WARNING__: updating the value of a secret can be a destructive action.
+__WARNING__: updating the value of a secret in AWS SecretsManager will change the configuration in Kubernetes, therefore can be a destructive action.
 
 ## Comparison to existing projects
 
-This is similar in concept to other projects such as:
+This is similar in function and concept to other projects such as:
  * [Kubernetes external secrets](https://github.com/godaddy/kubernetes-external-secrets)
  * [AWS secret operator](https://github.com/mumoshu/aws-secret-operator)
- 
-however both these projects poll the value of each mapped secret at a regular interval. When mapping a large number
-of secrets, with a large number of namespaces / clusters, this can get quite expensive.
 
-K8s-secret-syncer: 
+A the above solutions  poll the value of *each mapped AWS SecretsManager secret* at a regular interval. When mapping a large number
+of secrets, with a large number of namespaces / clusters, this can get (quite expensive)[https://aws.amazon.com/secrets-manager/pricing/].
+
+K8s-secret-syncer improves on this approach: 
  * only retrieves the value of secrets when they have been updated. This is done by maintaining a local
 cache, and using the AWS Secret versionID to verify if the secret has changed.
- * restricts what secrets can be accessed using IAM roles
- * can use templates to generate Kubernetes secrets fields - enabling for example looping over multiple AWS Secrets
+ * provides access control to secrets in AWS SecretsManager using IAM roles. This can be configured on the namespace level 
+ * offers templating to generate Kubernetes secrets fields - allowing to have values from multiple AWS SecretsManager secrets in one Kubernetes Secret. This can be used for example to create config files in Kubernetes from a list of similarly structured infrastructure secrets in AWS
 
-## Defining a SecretManager secret to map
+## Defining mapping between an AWS SecretsManager secret and a Kubernetes Secret
 
 The following resource will map the AWS Secret ```secretsyncer/secret/sample``` to the Kubernetes Secret
-```demo-service-secret```, and copy all key/values of the secrets-manager to Kubernetes.
+```demo-service-secret```, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For this example, the AWS SecretsManager secret needs to be a valid JSON consisting only of key-value pairs.
 
-k8s-secret-syncer will assume the role ```iam_role``` to poll the secret. Note: that role must be part of the kube2iam
-annotation on the namespace.
+To access the secrets, k8s-secret-syncer will assume the role ```iam_role``` to poll the secret. Note: that role must be assumed by the Kubernetes cluster/node where the operator runs, eg part of the kube2iam annotation on the namespace.
 
 ```
 apiVersion: secrets.contentful.com/v1
@@ -45,7 +42,7 @@ spec:
       name: secretsyncer/secret/sample
 ```
 
-If you only need to retrieve a few keys in an AWS secret, or multiple keys from different AWS secrets, you
+If you only need to retrieve select keys in a single AWS secret, or multiple keys from different AWS secrets, you
 can use the following syntax:
 
 
@@ -61,7 +58,6 @@ spec:
     # Sets the key mysql_user for the Kubernetes Secret "demo-service-secret" to "contentful"
     - name: mysql_user
       value: "contentful"
-
     # Takes the value for key "password" from the Secrets Manager secret "mysql", assign to the
     # key "mysql_pw" of the Kubernetes secret "demo-service-secret"
     - name: mysql_pw
