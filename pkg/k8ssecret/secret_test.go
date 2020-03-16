@@ -73,7 +73,7 @@ func TestGenerateSecret(t *testing.T) {
 							},
 						},
 						DataFrom: &secretsv1.DataFrom{SecretMapRef: &secretsv1.SecretMapRef{Name: aws.String("cf/secret/test")}},
-						IAMRole: _s("iam_role"),
+						IAMRole:  _s("iam_role"),
 					},
 				},
 				err:               nil,
