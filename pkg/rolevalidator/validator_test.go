@@ -1,6 +1,7 @@
 package rolevalidator
 
 import (
+	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
 	v1 "k8s.io/api/core/v1"
 	"testing"
 )
@@ -22,38 +23,66 @@ func (m *mockNSGetter) Get(nsName string) (*v1.Namespace, error) {
 	return ns, nil
 }
 
+type mockUnannottatedNSGetter struct {
+	annotation string
+}
+
+func (m *mockUnannottatedNSGetter) Get(nsName string) (*v1.Namespace, error) {
+	ns := &v1.Namespace{}
+	ns.Annotations = map[string]string{}
+
+	return ns, nil
+}
+
 func TestIsWhitelisted(t *testing.T) {
 	testCases := []struct {
-		role, annotation string
-		expectAllowed    bool
+		role          string
+		expectAllowed bool
+		getter        k8snamespace.NamespaceGetter
 	}{
 		{
 			role:          "role1",
-			annotation:    "[\"role1\"]",
 			expectAllowed: true,
+			getter: &mockNSGetter{
+				annotation: "[\"role1\"]",
+			},
 		},
 		{
 			role:          "role2",
-			annotation:    "[\"role1\", \"role2\"]",
 			expectAllowed: true,
+			getter: &mockNSGetter{
+				annotation: "[\"role1\", \"role2\"]",
+			},
 		},
 		{
 			role:          "role1",
-			annotation:    "[\"role2\"]",
 			expectAllowed: false,
+			getter: &mockNSGetter{
+				annotation: "[\"role2\"]",
+			},
+		},
+		{
+			role:          "role1",
+			expectAllowed: true,
+			getter:        &mockUnannottatedNSGetter{},
+		},
+		{
+			role:          "",
+			expectAllowed: false,
+			getter: &mockNSGetter{
+				annotation: "[\"role2\"]",
+			},
 		},
 	}
 
-	mng := &mockNSGetter{}
-	rv := NewRoleValidator(&mockARNGetter{}, mng)
 	for _, test := range testCases {
-		mng.annotation = test.annotation
-		isAllowed, err := rv.IsWhitelisted(test.role, test.annotation)
+		rv := NewRoleValidator(&mockARNGetter{}, test.getter)
+		isAllowed, err := rv.IsWhitelisted(test.role, "test")
 		if err != nil {
-			t.Errorf("got error with annotation %s, role %s: %s", test.annotation, test.role, err)
+			t.Errorf("got error with role %s: %s", test.role, err)
 		}
 		if isAllowed != test.expectAllowed {
-			t.Errorf("annotation %s, role %s, expected %t, got %t", test.annotation, test.role, test.expectAllowed, isAllowed)
+			t.Errorf("role %s, expected %t, got %t", test.role, test.expectAllowed, isAllowed)
 		}
 	}
 }
