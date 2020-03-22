@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -63,31 +63,43 @@ var _ = Describe("SyncedSecret Controller", func() {
 	// Avoid adding tests for vanilla CRUD operations because they would
 	// test Kubernetes API server, which isn't the goal here.
 	Context("For a single SyncedSecret", func() {
-
 		secretKey := types.NamespacedName{
 			Name:      "secret-name",
 			Namespace: TEST_NAMESPACE,
 		}
 
-		key := types.NamespacedName{
-			Name:      "secret-name",
-			Namespace: TEST_NAMESPACE,
-		}
-
-		var resourceVersion string
-
+		resourceVersion := ""
 		It("Should Create K8S Secrets for SyncedSecret CRD", func() {
 			toCreate := &secretsv1.SyncedSecret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.Name,
-					Namespace: key.Namespace,
+					Name:            secretKey.Name,
+					Namespace:       secretKey.Namespace,
+					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
 					SecretMetadata: metav1.ObjectMeta{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
-						Annotations: map[string]string{
-							"randomkey": "random/string",
+					},
+					IAMRole: _s("test"),
+					Data: []*secretsv1.SecretField{
+						{
+							Name: _s("DB_NAME"),
+							ValueFrom: &secretsv1.ValueFrom{
+								SecretKeyRef: &secretsv1.SecretKeyRef{
+									Name: _s("random/aws/secret003"),
+									Key:  _s("database_name"),
+								},
+							},
+						},
+						{
+							Name: _s("DB_PASS"),
+							ValueFrom: &secretsv1.ValueFrom{
+								SecretKeyRef: &secretsv1.SecretKeyRef{
+									Name: _s("random/aws/secret003"),
+									Key:  _s("database_pass"),
+								},
+							},
 						},
 					},
 				},
@@ -97,9 +109,6 @@ var _ = Describe("SyncedSecret Controller", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      secretKey.Name,
 					Namespace: secretKey.Namespace,
-					Annotations: map[string]string{
-						"randomkey": "random/aws/secret003",
-					},
 				},
 				Type: "Opaque",
 				Data: map[string][]byte{
@@ -121,27 +130,42 @@ var _ = Describe("SyncedSecret Controller", func() {
 			Expect(reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)).To(BeTrue())
 
 			fetchedCfSecret := &secretsv1.SyncedSecret{}
-			err := k8sClient.Get(context.Background(), key, fetchedCfSecret)
+			err := k8sClient.Get(context.Background(), secretKey, fetchedCfSecret)
 			Expect(err).ToNot(HaveOccurred())
 			resourceVersion = fetchedCfSecret.ResourceVersion
-
-			Expect(fetchedCfSecret.Status.CurrentVersionID).To(BeEquivalentTo("005"))
-
 		})
 
-		It("Should update k8s secret object if there is change in SyncedSecret CRD", func() {
+		It("Should update k8s secret object if there is change in AwsSecret CRD", func() {
 			toUpdate := &secretsv1.SyncedSecret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:            key.Name,
-					Namespace:       key.Namespace,
+					Name:            secretKey.Name,
+					Namespace:       secretKey.Namespace,
 					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
 					SecretMetadata: metav1.ObjectMeta{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
-						Annotations: map[string]string{
-							"randomkey": "random/string",
+					},
+					IAMRole: _s("test"),
+					Data: []*secretsv1.SecretField{
+						{
+							Name: _s("DB_NAME"),
+							ValueFrom: &secretsv1.ValueFrom{
+								SecretKeyRef: &secretsv1.SecretKeyRef{
+									Name: _s("random/aws/secret003"),
+									Key:  _s("database_name1"),
+								},
+							},
+						},
+						{
+							Name: _s("DB_PASS"),
+							ValueFrom: &secretsv1.ValueFrom{
+								SecretKeyRef: &secretsv1.SecretKeyRef{
+									Name: _s("random/aws/secret003"),
+									Key:  _s("database_pass"),
+								},
+							},
 						},
 					},
 				},
@@ -151,11 +175,6 @@ var _ = Describe("SyncedSecret Controller", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      secretKey.Name,
 					Namespace: secretKey.Namespace,
-					Annotations: map[string]string{
-						"randomkey":     "random/string",
-						"aws-versionId": "005",
-						"aws-secretId":  "random/aws/secret003",
-					},
 				},
 				Type: "Opaque",
 				Data: map[string][]byte{
@@ -173,13 +192,12 @@ var _ = Describe("SyncedSecret Controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			fetchedCfSecret := &secretsv1.SyncedSecret{}
-			err := k8sClient.Get(context.Background(), key, fetchedCfSecret)
+			err := k8sClient.Get(context.Background(), secretKey, fetchedCfSecret)
 			Expect(err).ToNot(HaveOccurred())
 			resourceVersion = fetchedCfSecret.ResourceVersion
 		})
 
-		It("Should update k8s secret object if there is a change in the mapped AWS Secret", func() {
-
+		It("Should update the k8s secret object if the mapped AWS Secret changes", func() {
 			MockSecretsOutput.SecretsValueOutput = &secretsmanager.GetSecretValueOutput{
 				SecretString: _s(`{"database_pass":"cupoftea", "database_name1":"secretDB02"}`),
 				VersionId:    _s(`006`),
@@ -214,11 +232,6 @@ var _ = Describe("SyncedSecret Controller", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      secretKey.Name,
 					Namespace: secretKey.Namespace,
-					Annotations: map[string]string{
-						"randomkey":     "random/aws/secret003",
-						"aws-versionId": "006",
-						"aws-secretId":  "random/aws/secret003",
-					},
 				},
 				Type: "Opaque",
 				Data: map[string][]byte{
@@ -228,12 +241,10 @@ var _ = Describe("SyncedSecret Controller", func() {
 			}
 
 			fetchedSecret := &corev1.Secret{}
-			Eventually(func() string {
+			Eventually(func() bool {
 				k8sClient.Get(context.Background(), secretKey, fetchedSecret)
-				return fetchedSecret.ObjectMeta.Annotations["aws-versionId"]
-			}, timeout, interval).Should(BeEquivalentTo(secretExpect.ObjectMeta.Annotations["aws-versionId"]))
-
-			Expect(reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)).To(BeTrue())
+				return reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
 })
