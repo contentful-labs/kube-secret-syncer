@@ -49,7 +49,6 @@ func TestGetPollInterval(t *testing.T) {
 }
 
 var _ = Describe("SyncedSecret Controller", func() {
-
 	const timeout = time.Minute * 3
 	const interval = time.Second * 2
 
