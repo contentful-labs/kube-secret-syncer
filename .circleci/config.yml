@@ -1,0 +1,19 @@
+version: 2.1
+jobs:
+  build:
+    machine:
+      image: ubuntu-1604:201903-01
+    environment:
+    steps:
+      - checkout
+      - run: make docker-test
+      - run:
+          name: Report code coverage
+          command: |
+            bash <(curl -s https://codecov.io/bash)
+          when: on_success
+      - run: make docker-build
+workflows:
+  build:
+    jobs:
+      - build
