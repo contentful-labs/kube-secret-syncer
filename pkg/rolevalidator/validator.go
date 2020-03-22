@@ -22,17 +22,17 @@ func NewRoleValidator(getter iam.ARNGetter, nsCache k8snamespace.NamespaceGetter
 }
 
 func (rv *RoleValidator) IsWhitelisted(role, namespace string) (bool, error) {
-	if role == "" { // Temporarily allow secrets without iamRole defined
-		return true, nil
-	}
-
 	ns, err := rv.nsCache.Get(namespace)
 	if err != nil {
 		return false, err
 	}
 
 	annotation, annotationFound := ns.Annotations[annotationName]
-	if !annotationFound { // An iamRole is set, but the namespace has no kube2iam annotation
+	if !annotationFound { // The namespace does not use kube2iam. We should not specify an IAMRole, but we dont prevent it
+		return true, nil
+	}
+
+	if role == "" { // Secrets must have a role defined if an annotation is found
 		return false, nil
 	}
 
