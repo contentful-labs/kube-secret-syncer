@@ -147,12 +147,13 @@ func realMain() int {
 	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache)
 
 	r := &controllers.SyncedSecretReconciler{
-		Client:        mgr.GetClient(),
-		Ctx:           ctx,
-		Log:           ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
-		Sess:          session.New(Retry5Cfg),
-		GetSMClient:   smsvcfactory.getSMSVC,
-		RoleValidator: roleValidator,
+		Client:            mgr.GetClient(),
+		Ctx:               ctx,
+		Log:               ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
+		Sess:              session.New(Retry5Cfg),
+		GetSMClient:       smsvcfactory.getSMSVC,
+		RoleValidator:     roleValidator,
+		ReconcileInterval: 120 * time.Second,
 	}
 
 	// Introduce artificial startup delay so that all controllers do not start
