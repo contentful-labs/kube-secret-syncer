@@ -66,6 +66,7 @@ type SyncedSecretSpec struct {
 	SecretMetadata metav1.ObjectMeta `json:"secretMetadata,omitempty"`
 
 	// IAMRole
+	// +optional
 	IAMRole *string `json:"IAMRole"`
 
 	// Data

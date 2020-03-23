@@ -105,7 +105,7 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 
-	os.Setenv("POLL_INTERVAL_SEC", "10")
+	os.Setenv("POLL_INTERVAL_SEC", "3")
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -170,9 +170,10 @@ var _ = BeforeSuite(func(done Done) {
 		GetSMClient: func(IAMRole string) (secretsmanageriface.SecretsManagerAPI, error) {
 			return &smSvc, nil
 		},
-		RoleValidator: &mockRoleValidator{},
-		gauges:        map[string]prometheus.Gauge{},
-		sync_state:    map[string]bool{},
+		RoleValidator:     &mockRoleValidator{},
+		gauges:            map[string]prometheus.Gauge{},
+		sync_state:        map[string]bool{},
+		ReconcileInterval: 1 * time.Second,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
