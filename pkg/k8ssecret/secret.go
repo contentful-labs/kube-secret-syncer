@@ -61,7 +61,6 @@ func GenerateK8SSecret(
 
 	// Now to the data...
 	data := make(map[string][]byte)
-
 	if cs.Spec.DataFrom != nil {
 		var secretRef *string // secretID of the secret in secret Manager
 		if cs.Spec.DataFrom.SecretRef != nil {
@@ -92,16 +91,11 @@ func GenerateK8SSecret(
 
 			if field.ValueFrom != nil {
 				if field.ValueFrom.SecretRef != nil {
-					var AWSSecretValue interface{}
-					var err error
-					if AWSSecretValue, err = secretValueGetter(*field.ValueFrom.SecretRef.Name, *cs.Spec.IAMRole); err != nil {
+					AWSSecretValue, err := secretValueGetter(*field.ValueFrom.SecretRef.Name, *cs.Spec.IAMRole)
+					if err != nil {
 						return nil, err
 					}
-					AWSSecretValueString, ok := AWSSecretValue.(string)
-					if !ok {
-						return nil, fmt.Errorf("failed getting secret value: not a string")
-					}
-					data[*field.Name] = []byte(fmt.Sprintf("%v", AWSSecretValueString))
+					data[*field.Name] = []byte(AWSSecretValue)
 				}
 
 				if field.ValueFrom.SecretKeyRef != nil {
