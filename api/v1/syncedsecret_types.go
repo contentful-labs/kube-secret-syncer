@@ -38,6 +38,10 @@ type SecretKeyRef struct {
 type ValueFrom struct {
 	// SecretKeyRef
 	// +optional
+	SecretRef *SecretRef `json:"secretRef,omitempty"`
+
+	// SecretKeyRef
+	// +optional
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 
 	// Template

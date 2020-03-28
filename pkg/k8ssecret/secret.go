@@ -3,6 +3,7 @@ package k8ssecret
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/sprig"
 	"github.com/contentful-labs/k8s-secret-syncer/pkg/secretsmanager"
@@ -30,7 +31,7 @@ func K8SSecretsEqual(secret1, secret2 corev1.Secret) bool {
 func GenerateK8SSecret(
 	cs secretsv1.SyncedSecret,
 	secrets secretsmanager.Secrets,
-	secretValueGetter func(string, string) (map[string]interface{}, error),
+	secretValueGetter func(string, string) (string, error),
 	secretFilterByTagKey func(secretsmanager.Secrets, string) secretsmanager.Secrets,
 ) (*corev1.Secret, error) {
 	annotations := map[string]string{}
@@ -62,18 +63,22 @@ func GenerateK8SSecret(
 	data := make(map[string][]byte)
 
 	if cs.Spec.DataFrom != nil {
-		var secretMapRef *string // secretID of the secret in secret Manager
+		var secretRef *string // secretID of the secret in secret Manager
 		if cs.Spec.DataFrom.SecretRef != nil {
-			secretMapRef = cs.Spec.DataFrom.SecretRef.Name
+			secretRef = cs.Spec.DataFrom.SecretRef.Name
 		}
 
-		AWSSecretValues := map[string]interface{}{}
-		var err error
-		if secretMapRef != nil {
-			if AWSSecretValues, err = secretValueGetter(*secretMapRef, *cs.Spec.IAMRole); err != nil {
+		if secretRef != nil {
+			AWSSecretValue, err := secretValueGetter(*secretRef, *cs.Spec.IAMRole)
+			if err != nil {
 				return nil, err
 			}
-			for secretKey, secretValue := range AWSSecretValues {
+			var AWSSecretValuesMap map[string]interface{}
+			err = json.Unmarshal([]byte(AWSSecretValue), &AWSSecretValuesMap)
+			if err != nil {
+				return nil, fmt.Errorf("secret %s is not a valid JSON", *secretRef)
+			}
+			for secretKey, secretValue := range AWSSecretValuesMap {
 				data[secretKey] = []byte(fmt.Sprintf("%v", secretValue))
 			}
 		}
@@ -86,20 +91,47 @@ func GenerateK8SSecret(
 			}
 
 			if field.ValueFrom != nil {
-				if field.ValueFrom.SecretKeyRef != nil {
-					AWSSecretValues := map[string]interface{}{}
+				if field.ValueFrom.SecretRef != nil {
+					var AWSSecretValue interface{}
 					var err error
-					if AWSSecretValues, err = secretValueGetter(*field.ValueFrom.SecretKeyRef.Name, *cs.Spec.IAMRole); err != nil {
+					if AWSSecretValue, err = secretValueGetter(*field.ValueFrom.SecretRef.Name, *cs.Spec.IAMRole); err != nil {
 						return nil, err
 					}
-					data[*field.Name] = []byte(fmt.Sprintf("%v", AWSSecretValues[*field.ValueFrom.SecretKeyRef.Key]))
+					AWSSecretValueString, ok := AWSSecretValue.(string)
+					if !ok {
+						return nil, fmt.Errorf("failed getting secret value: not a string")
+					}
+					data[*field.Name] = []byte(fmt.Sprintf("%v", AWSSecretValueString))
+				}
+
+				if field.ValueFrom.SecretKeyRef != nil {
+					AWSSecretValue, err := secretValueGetter(*field.ValueFrom.SecretKeyRef.Name, *cs.Spec.IAMRole)
+					if err != nil {
+						return nil, err
+					}
+					AWSSecretValuesMap := map[string]interface{}{}
+					if err := json.Unmarshal([]byte(AWSSecretValue), &AWSSecretValuesMap); err != nil {
+						return nil, err
+					}
+					data[*field.Name] = []byte(fmt.Sprintf("%v", AWSSecretValuesMap[*field.ValueFrom.SecretKeyRef.Key]))
 				}
 
 				if field.ValueFrom.Template != nil {
 					tpl := template.New(cs.Name)
 					tpl = tpl.Funcs(template.FuncMap{
-						"getSecretValue": func(secretID string) (map[string]interface{}, error) {
+						"getSecretValue": func(secretID string) (interface{}, error) {
 							return secretValueGetter(secretID, *cs.Spec.IAMRole)
+						},
+						"getSecretValueMap": func(secretID string) (map[string]interface{}, error) {
+							raw, err := secretValueGetter(secretID, *cs.Spec.IAMRole)
+							if err != nil {
+								return nil, fmt.Errorf("failed retrieving value for secret %s", secretID)
+							}
+							var asMap map[string]interface{}
+							if err := json.Unmarshal([]byte(raw), &asMap); err != nil {
+								return nil, fmt.Errorf("secret %s does not contain a valid JSON", secretID)
+							}
+							return asMap, err
 						},
 						"filterByTagKey": secretFilterByTagKey,
 						"base64": func(value interface{}) string {
