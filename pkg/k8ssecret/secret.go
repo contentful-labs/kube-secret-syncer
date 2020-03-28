@@ -119,7 +119,7 @@ func GenerateK8SSecret(
 				if field.ValueFrom.Template != nil {
 					tpl := template.New(cs.Name)
 					tpl = tpl.Funcs(template.FuncMap{
-						"getSecretValue": func(secretID string) (interface{}, error) {
+						"getSecretValue": func(secretID string) (string, error) {
 							return secretValueGetter(secretID, *cs.Spec.IAMRole)
 						},
 						"getSecretValueMap": func(secretID string) (map[string]interface{}, error) {

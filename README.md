@@ -125,7 +125,7 @@ the Kubernetes secret pgbouncer.txt.
 The template is a [Go template](https://golang.org/pkg/text/template/) with the following elements defined:
  * .Secrets - a map containing all listed secrets (without their value)
  * filterByTagKey - a helper function to filter the secrets by tag
- * getSecretValueRaw - will retrieve the raw value of a Secret in SecretsManager, given its secret ID
+ * getSecretValue - will retrieve the raw value of a Secret in SecretsManager, given its secret ID
  * getSecretValueMap - will retrieve the value of a Secret in SecretsManager that contains a JSON, given its secret ID -
  as a map
 
