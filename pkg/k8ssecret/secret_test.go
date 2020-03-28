@@ -18,7 +18,7 @@ func _s(A string) *string {
 	return &A
 }
 
-func mockgetSecretValue(secretID string, role string) (map[string]interface{}, error) {
+func mockgetSecretValue(string, string) (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"key1": "value1",
 		"key2": "value2",
@@ -39,7 +39,7 @@ func mockgetDBSecretValue(secretID string, role string) (map[string]interface{},
 	}, nil
 }
 
-func mockFailinggetSecretValue(secretID string, role string) (map[string]interface{}, error) {
+func mockFailinggetSecretValue(string, string) (map[string]interface{}, error) {
 	return nil, fmt.Errorf("failed getting secret value")
 }
 
@@ -72,7 +72,7 @@ func TestGenerateSecret(t *testing.T) {
 								"randomkey": "random/string",
 							},
 						},
-						DataFrom: &secretsv1.DataFrom{SecretMapRef: &secretsv1.SecretMapRef{Name: aws.String("cf/secret/test")}},
+						DataFrom: &secretsv1.DataFrom{SecretRef: &secretsv1.SecretRef{Name: aws.String("cf/secret/test")}},
 						IAMRole:  _s("iam_role"),
 					},
 				},

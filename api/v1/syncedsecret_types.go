@@ -22,12 +22,12 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type SecretMapRef struct {
+type SecretRef struct {
 	Name *string `json:"name"`
 }
 
 type DataFrom struct {
-	SecretMapRef *SecretMapRef `json:"secretMapRef,omitempty"`
+	SecretRef *SecretRef `json:"secretRef,omitempty"`
 }
 
 type SecretKeyRef struct {

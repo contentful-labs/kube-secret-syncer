@@ -63,8 +63,8 @@ func GenerateK8SSecret(
 
 	if cs.Spec.DataFrom != nil {
 		var secretMapRef *string // secretID of the secret in secret Manager
-		if cs.Spec.DataFrom.SecretMapRef != nil {
-			secretMapRef = cs.Spec.DataFrom.SecretMapRef.Name
+		if cs.Spec.DataFrom.SecretRef != nil {
+			secretMapRef = cs.Spec.DataFrom.SecretRef.Name
 		}
 
 		AWSSecretValues := map[string]interface{}{}
