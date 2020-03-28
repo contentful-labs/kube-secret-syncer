@@ -25,6 +25,10 @@ func mockgetSecretValue(string, string) (string, error) {
 	}`, nil
 }
 
+func mockgetNonJSONSecretValue(string, string) (string, error) {
+	return `not a json`, nil
+}
+
 func mockgetDBSecretValue(secretID string, role string) (string, error) {
 	user := "contentful"
 	if strings.Contains(secretID, "graphapi") {
@@ -210,6 +214,42 @@ func TestGenerateSecret(t *testing.T) {
 			},
 		},
 		{
+			name: "it should fail to references a field in a non-JSON secret",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("foo"),
+								ValueFrom: &secretsv1.ValueFrom{
+									SecretKeyRef: &secretsv1.SecretKeyRef{
+										Name: _s("cf/secret/test"),
+										Key:  _s("key2"),
+									},
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetNonJSONSecretValue,
+			},
+			want: nil,
+		},
+		{
 			name: "it should support retrieving raw secret Value",
 			have: have{
 				SyncedSecret: secretsv1.SyncedSecret{
@@ -361,6 +401,39 @@ func TestGenerateSecret(t *testing.T) {
 					"foo": []byte("value2"),
 				},
 			},
+		},
+		{
+			name: "getSecretValueMap should fail if secret is not JSON",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("foo"),
+								ValueFrom: &secretsv1.ValueFrom{
+									Template: _s(`{{- with getSecretValueMap "cachedSecret1" }}{{ .key2 }}{{ end -}}`),
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetNonJSONSecretValue,
+			},
+			want: nil,
 		},
 		{
 			name: "it should be able to iterate through the available secrets",
