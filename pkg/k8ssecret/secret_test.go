@@ -262,7 +262,59 @@ func TestGenerateSecret(t *testing.T) {
 			},
 		},
 		{
-			name: "it should support templated fields",
+			name: "it should support templated fields & getSecretValue",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("foo"),
+								ValueFrom: &secretsv1.ValueFrom{
+									Template: _s(`{{- getSecretValue "cachedSecret1" -}}`),
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetSecretValue,
+			},
+			want: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret-name",
+					Namespace: "secret-namespace",
+					Annotations: map[string]string{
+						"randomkey": "random/string",
+					},
+				},
+				Type: "Opaque",
+				Data: map[string][]byte{
+					"foo": []byte(`{
+		"key1": "value1",
+		"key2": "value2"
+	}`),
+				},
+			},
+		},
+		{
+			name: "it should support templated fields & getSecretValueMap",
 			have: have{
 				SyncedSecret: secretsv1.SyncedSecret{
 					ObjectMeta: metav1.ObjectMeta{
