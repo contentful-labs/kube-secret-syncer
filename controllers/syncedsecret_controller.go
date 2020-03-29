@@ -143,7 +143,7 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 
 	r.sync_state[cs.Name] = true
 
-	return ctrl.Result{RequeueAfter: r.ReconcileInterval}, nil
+	return ctrl.Result{}, nil
 }
 
 func (r *SyncedSecretReconciler) templateSecretGetter(secretID string, IAMRole string) (map[string]interface{}, error) {
