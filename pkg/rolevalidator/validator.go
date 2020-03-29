@@ -15,8 +15,9 @@ type RoleValidator struct {
 
 func NewRoleValidator(getter iam.ARNGetter, nsCache k8snamespace.NamespaceGetter, annotationName string) *RoleValidator {
 	return &RoleValidator{
-		arnGetter: getter,
-		nsCache:   nsCache,
+		arnGetter:      getter,
+		nsCache:        nsCache,
+		annotationName: annotationName,
 	}
 }
 
