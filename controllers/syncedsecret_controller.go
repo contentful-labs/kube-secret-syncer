@@ -51,14 +51,14 @@ type RoleValidator interface {
 // SyncedSecretReconciler reconciles a SyncedSecret object
 type SyncedSecretReconciler struct {
 	client.Client
-	Ctx               context.Context
-	Sess              *session.Session
-	GetSMClient       func(string) (secretsmanageriface.SecretsManagerAPI, error)
-	poller            *secretsmanager.Poller
-	getNamespace      k8snamespace.NamespaceGetter
-	RoleValidator     RoleValidator
-	Log               logr.Logger
-	wg                sync.WaitGroup
+	Ctx           context.Context
+	Sess          *session.Session
+	GetSMClient   func(string) (secretsmanageriface.SecretsManagerAPI, error)
+	poller        *secretsmanager.Poller
+	getNamespace  k8snamespace.NamespaceGetter
+	RoleValidator RoleValidator
+	Log           logr.Logger
+	wg            sync.WaitGroup
 
 	gauges     map[string]prometheus.Gauge
 	sync_state map[string]bool
