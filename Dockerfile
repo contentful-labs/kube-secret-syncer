@@ -18,8 +18,8 @@ COPY pkg/ pkg/
 # Test image
 FROM base as test
 
-RUN curl -sL https://go.kubebuilder.io/dl/2.2.0/linux/amd64 | tar -xz -C /tmp/ && \
-  mv /tmp/kubebuilder_2.2.0_linux_amd64 /usr/local/kubebuilder
+RUN curl -sL https://go.kubebuilder.io/dl/2.3.1/linux/amd64 | tar -xz -C /tmp/ && \
+  mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder
 
 COPY Makefile Makefile
 COPY hack/ hack/
