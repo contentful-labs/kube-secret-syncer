@@ -77,7 +77,6 @@ const (
 func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var err error
 	var cs secretsv1.SyncedSecret
-	const defaultReconcileInterval = 120
 
 	defer r.updatePrometheus(r.sync_state)
 
