@@ -7,14 +7,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-const annotationName = "iam.amazonaws.com/allowed-roles"
 
 type RoleValidator struct {
 	arnGetter iam.ARNGetter
 	nsCache   k8snamespace.NamespaceGetter
+	annotationName string
 }
 
-func NewRoleValidator(getter iam.ARNGetter, nsCache k8snamespace.NamespaceGetter) *RoleValidator {
+func NewRoleValidator(getter iam.ARNGetter, nsCache k8snamespace.NamespaceGetter, annotationName string) *RoleValidator {
 	return &RoleValidator{
 		arnGetter: getter,
 		nsCache:   nsCache,
@@ -27,7 +27,7 @@ func (rv *RoleValidator) IsWhitelisted(role, namespace string) (bool, error) {
 		return false, err
 	}
 
-	annotation, annotationFound := ns.Annotations[annotationName]
+	annotation, annotationFound := ns.Annotations[rv.annotationName]
 	if !annotationFound { // The namespace does not use kube2iam. We should not specify an IAMRole, but we dont prevent it
 		return true, nil
 	}

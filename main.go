@@ -17,7 +17,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
 	"math/rand"
 	"os"
@@ -99,12 +98,15 @@ func newSMSVCFactory(sess *session.Session, arnGetter iam.ARNGetter) *SMSVCFacto
 }
 
 func realMain() int {
-	var metricsAddr string
-	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	flag.Parse()
+	metricsAddr := os.Getenv("METRICS_LISTEN")
+	if metricsAddr == "" {
+		metricsAddr = ":8080"
+	}
+
+	annotationName := os.Getenv("NS_ANNOTATION")
+	if annotationName == "" {
+		annotationName = "iam.amazonaws.com/allowed-roles"
+	}
 
 	logCfg := zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
@@ -125,7 +127,6 @@ func realMain() int {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -144,7 +145,7 @@ func realMain() int {
 		return 1
 	}
 
-	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache)
+	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache, annotationName)
 
 	r := &controllers.SyncedSecretReconciler{
 		Client:            mgr.GetClient(),

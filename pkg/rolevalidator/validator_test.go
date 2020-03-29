@@ -76,7 +76,7 @@ func TestIsWhitelisted(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		rv := NewRoleValidator(&mockARNGetter{}, test.getter)
+		rv := NewRoleValidator(&mockARNGetter{}, test.getter, "iam.amazonaws.com/allowed-roles")
 		isAllowed, err := rv.IsWhitelisted(test.role, "test")
 		if err != nil {
 			t.Errorf("got error with role %s: %s", test.role, err)
