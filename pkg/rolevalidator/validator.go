@@ -7,10 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-
 type RoleValidator struct {
-	arnGetter iam.ARNGetter
-	nsCache   k8snamespace.NamespaceGetter
+	arnGetter      iam.ARNGetter
+	nsCache        k8snamespace.NamespaceGetter
 	annotationName string
 }
 
