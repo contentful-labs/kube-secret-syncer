@@ -58,7 +58,6 @@ type SyncedSecretReconciler struct {
 	getNamespace      k8snamespace.NamespaceGetter
 	RoleValidator     RoleValidator
 	Log               logr.Logger
-	ReconcileInterval time.Duration
 	wg                sync.WaitGroup
 
 	gauges     map[string]prometheus.Gauge
