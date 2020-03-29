@@ -23,6 +23,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type SecretMapRef struct {
+	// The name of the AWS Secrets Manager Secret
 	Name *string `json:"name"`
 }
 
@@ -30,29 +31,36 @@ type DataFrom struct {
 	SecretMapRef *SecretMapRef `json:"secretMapRef,omitempty"`
 }
 
+// A single Key in an AWS Secrets Manager secret
 type SecretKeyRef struct {
+	// The name of the AWS Secrets Manager Secret
 	Name *string `json:"name"`
-	Key  *string `json:"key"`
+
+	// The key in the AWS Secret we want to reference
+	Key *string `json:"key"`
 }
 
 type ValueFrom struct {
-	// SecretKeyRef
+	// A reference to the top-level key of a AWS Secrets Manager secret
+	// This secrets value needs to be a JSON
 	// +optional
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 
-	// Template
+	// A Go template
 	// +optional
 	Template *string `json:"template,omitempty"`
 }
 
+// A single Kubernetes secret Field
 type SecretField struct {
+	// The name of the Kubernetes field
 	Name *string `json:"name"`
 
-	// Value
+	// A hardcoded value for this field
 	// +optional
 	Value *string `json:"value,omitempty"`
 
-	// ValueFrom
+	// Get the value from a template or a secretKeyRef
 	// +optional
 	ValueFrom *ValueFrom `json:"valueFrom,omitempty"`
 }
@@ -65,15 +73,17 @@ type SyncedSecretSpec struct {
 	// Secret Metadata
 	SecretMetadata metav1.ObjectMeta `json:"secretMetadata,omitempty"`
 
-	// IAMRole
+	// The IAM Role (short name or full ARN) the controller will
+	// assume when retrieving the value of the AWS Secret
 	// +optional
 	IAMRole *string `json:"IAMRole"`
 
-	// Data
+	// Define a Kubernetes secret field by field
 	// +optional
 	Data []*SecretField `json:"data,omitempty"`
 
-	// DataFrom
+	// Copy all fields from an AWS Secrets Manager secret
+	// to the K8S Secret
 	// +optional
 	DataFrom *DataFrom `json:"dataFrom,omitempty"`
 }
