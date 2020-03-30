@@ -205,7 +205,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 
 			MockSecretsOutput.SecretsPageOutput = &secretsmanager.ListSecretsOutput{
 				SecretList: []*secretsmanager.SecretListEntry{
-					&secretsmanager.SecretListEntry{
+					{
 						Name:            _s("random/aws/secret003"),
 						LastChangedDate: _t(time_now.AddDate(0, 0, -2)),
 						SecretVersionsToStages: map[string][]*string{
@@ -213,14 +213,14 @@ var _ = Describe("SyncedSecret Controller", func() {
 								_s("AWSCURRENT"),
 							},
 						},
-					}, &secretsmanager.SecretListEntry{
+					}, {
 						Name:            _s("random/aws/secret003"),
 						LastChangedDate: _t(time_now.AddDate(0, 0, -1)),
 						SecretVersionsToStages: map[string][]*string{
-							"005": []*string{
+							"005": {
 								_s("AWSPREVIOUS"),
 							},
-							"006": []*string{
+							"006": {
 								_s("AWSCURRENT"),
 							},
 						},

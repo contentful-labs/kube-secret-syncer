@@ -21,6 +21,7 @@ import (
 	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
 	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -122,10 +123,21 @@ func realMain() int {
 	stackTraceLevel := uzap.NewAtomicLevelAt(zapcore.PanicLevel)
 	ctrl.SetLogger(zap.New(zap.Encoder(zapcore.NewJSONEncoder(logCfg)), zap.StacktraceLevel(&stackTraceLevel)))
 
+	syncPeriodEnv := os.Getenv("SYNC_PERIOD_SEC")
+	if syncPeriodEnv == "" {
+		syncPeriodEnv = "120"
+	}
+	syncPeriodSec, err := strconv.ParseUint(syncPeriodEnv, 10, 32)
+	if err != nil {
+		setupLog.Error(err, "failed parsing SYNC_PERIOD_SEC: Should be an integer")
+	}
+	syncPeriod := time.Duration(syncPeriodSec) * time.Second
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
+		SyncPeriod:         &syncPeriod,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -147,13 +159,12 @@ func realMain() int {
 	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache)
 
 	r := &controllers.SyncedSecretReconciler{
-		Client:            mgr.GetClient(),
-		Ctx:               ctx,
-		Log:               ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
-		Sess:              session.New(Retry5Cfg),
-		GetSMClient:       smsvcfactory.getSMSVC,
-		RoleValidator:     roleValidator,
-		ReconcileInterval: 120 * time.Second,
+		Client:        mgr.GetClient(),
+		Ctx:           ctx,
+		Log:           ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
+		Sess:          session.New(Retry5Cfg),
+		GetSMClient:   smsvcfactory.getSMSVC,
+		RoleValidator: roleValidator,
 	}
 
 	// Introduce artificial startup delay so that all controllers do not start

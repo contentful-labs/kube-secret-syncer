@@ -122,8 +122,10 @@ var _ = BeforeSuite(func(done Done) {
 
 	// +kubebuilder:scaffold:scheme
 
+	syncPeriod := 2 * time.Second
 	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme:     scheme.Scheme,
+		SyncPeriod: &syncPeriod,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sManager).ToNot(BeNil())
@@ -133,22 +135,22 @@ var _ = BeforeSuite(func(done Done) {
 	// create the secret for testing
 	MockSecretsOutput.SecretsPageOutput = &secretsmanager.ListSecretsOutput{
 		SecretList: []*secretsmanager.SecretListEntry{
-			&secretsmanager.SecretListEntry{
+			{
 				Name:            _s("random/aws/secret002"),
 				LastChangedDate: _t(time_now.AddDate(0, 0, -2)),
 				SecretVersionsToStages: map[string][]*string{
-					"002": []*string{
+					"002": {
 						_s("AWSCURRENT"),
 					},
 				},
-			}, &secretsmanager.SecretListEntry{
+			}, {
 				Name:            _s("random/aws/secret003"),
 				LastChangedDate: _t(time_now.AddDate(0, 0, -3)),
 				SecretVersionsToStages: map[string][]*string{
-					"005": []*string{
+					"005": {
 						_s("AWSCURRENT"),
 					},
-					"003": []*string{
+					"003": {
 						_s("AWSPREVIOUS"),
 					},
 				},
@@ -170,10 +172,9 @@ var _ = BeforeSuite(func(done Done) {
 		GetSMClient: func(IAMRole string) (secretsmanageriface.SecretsManagerAPI, error) {
 			return &smSvc, nil
 		},
-		RoleValidator:     &mockRoleValidator{},
-		gauges:            map[string]prometheus.Gauge{},
-		sync_state:        map[string]bool{},
-		ReconcileInterval: 1 * time.Second,
+		RoleValidator: &mockRoleValidator{},
+		gauges:        map[string]prometheus.Gauge{},
+		sync_state:    map[string]bool{},
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
