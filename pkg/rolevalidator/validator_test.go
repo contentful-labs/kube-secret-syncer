@@ -14,7 +14,7 @@ type mockNSGetter struct {
 	annotation string
 }
 
-func (m *mockNSGetter) Get(nsName string) (*v1.Namespace, error) {
+func (m *mockNSGetter) Get(string) (*v1.Namespace, error) {
 	ns := &v1.Namespace{}
 	ns.Annotations = map[string]string{
 		annotationName: m.annotation,
@@ -27,7 +27,7 @@ type mockUnannottatedNSGetter struct {
 	annotation string
 }
 
-func (m *mockUnannottatedNSGetter) Get(nsName string) (*v1.Namespace, error) {
+func (m *mockUnannottatedNSGetter) Get(string) (*v1.Namespace, error) {
 	ns := &v1.Namespace{}
 	ns.Annotations = map[string]string{}
 

@@ -18,29 +18,39 @@ func _s(A string) *string {
 	return &A
 }
 
-func mockgetSecretValue(secretID string, role string) (map[string]interface{}, error) {
-	return map[string]interface{}{
+func mockgetSecretValue(string, string) (string, error) {
+	return `{
 		"key1": "value1",
-		"key2": "value2",
-	}, nil
+		"key2": "value2"
+	}`, nil
 }
 
-func mockgetDBSecretValue(secretID string, role string) (map[string]interface{}, error) {
+func mockgetNonJSONSecretValue(string, string) (string, error) {
+	return `not a json`, nil
+}
+
+func mockgetDBSecretValue(secretID string, role string) (string, error) {
 	user := "contentful"
 	if strings.Contains(secretID, "graphapi") {
 		user = "graphapi"
 	}
 
-	return map[string]interface{}{
+	secret := map[string]interface{}{
 		"shardid":  secretID,
 		"host":     fmt.Sprintf("%s-host", secretID),
 		"user":     user,
 		"password": fmt.Sprintf("%s-password", secretID),
-	}, nil
+	}
+
+	asJson, err := json.Marshal(secret)
+	if err != nil {
+		return "", err
+	}
+	return string(asJson), nil
 }
 
-func mockFailinggetSecretValue(secretID string, role string) (map[string]interface{}, error) {
-	return nil, fmt.Errorf("failed getting secret value")
+func mockFailinggetSecretValue(string, string) (string, error) {
+	return "", fmt.Errorf("failed getting secret value")
 }
 
 func TestGenerateSecret(t *testing.T) {
@@ -49,7 +59,7 @@ func TestGenerateSecret(t *testing.T) {
 		secretVersion     string
 		err               error
 		cachedSecrets     secretsmanager.Secrets
-		secretValueGetter func(string, string) (map[string]interface{}, error)
+		secretValueGetter func(string, string) (string, error)
 	}
 	testCases := []struct {
 		name string
@@ -72,7 +82,7 @@ func TestGenerateSecret(t *testing.T) {
 								"randomkey": "random/string",
 							},
 						},
-						DataFrom: &secretsv1.DataFrom{SecretMapRef: &secretsv1.SecretMapRef{Name: aws.String("cf/secret/test")}},
+						DataFrom: &secretsv1.DataFrom{SecretRef: &secretsv1.SecretRef{Name: aws.String("cf/secret/test")}},
 						IAMRole:  _s("iam_role"),
 					},
 				},
@@ -204,7 +214,7 @@ func TestGenerateSecret(t *testing.T) {
 			},
 		},
 		{
-			name: "it should support templated fields",
+			name: "it should fail to references a field in a non-JSON secret",
 			have: have{
 				SyncedSecret: secretsv1.SyncedSecret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -223,7 +233,147 @@ func TestGenerateSecret(t *testing.T) {
 							{
 								Name: _s("foo"),
 								ValueFrom: &secretsv1.ValueFrom{
-									Template: _s(`{{- with getSecretValue "cachedSecret1" }}{{ .key2 }}{{ end -}}`),
+									SecretKeyRef: &secretsv1.SecretKeyRef{
+										Name: _s("cf/secret/test"),
+										Key:  _s("key2"),
+									},
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetNonJSONSecretValue,
+			},
+			want: nil,
+		},
+		{
+			name: "it should support retrieving raw secret Value",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("key1"),
+								ValueFrom: &secretsv1.ValueFrom{
+									SecretRef: &secretsv1.SecretRef{Name: _s("cf/secret/test")},
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetSecretValue,
+			},
+			want: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret-name",
+					Namespace: "secret-namespace",
+					Annotations: map[string]string{
+						"randomkey": "random/string",
+					},
+				},
+				Type: "Opaque",
+				Data: map[string][]byte{
+					"key1": []byte(`{
+		"key1": "value1",
+		"key2": "value2"
+	}`),
+				},
+			},
+		},
+		{
+			name: "it should support templated fields & getSecretValue",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("foo"),
+								ValueFrom: &secretsv1.ValueFrom{
+									Template: _s(`{{- getSecretValue "cachedSecret1" -}}`),
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetSecretValue,
+			},
+			want: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret-name",
+					Namespace: "secret-namespace",
+					Annotations: map[string]string{
+						"randomkey": "random/string",
+					},
+				},
+				Type: "Opaque",
+				Data: map[string][]byte{
+					"foo": []byte(`{
+		"key1": "value1",
+		"key2": "value2"
+	}`),
+				},
+			},
+		},
+		{
+			name: "it should support templated fields & getSecretValueMap",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("foo"),
+								ValueFrom: &secretsv1.ValueFrom{
+									Template: _s(`{{- with getSecretValueMap "cachedSecret1" }}{{ .key2 }}{{ end -}}`),
 								},
 							},
 						},
@@ -253,6 +403,39 @@ func TestGenerateSecret(t *testing.T) {
 			},
 		},
 		{
+			name: "getSecretValueMap should fail if secret is not JSON",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name: _s("foo"),
+								ValueFrom: &secretsv1.ValueFrom{
+									Template: _s(`{{- with getSecretValueMap "cachedSecret1" }}{{ .key2 }}{{ end -}}`),
+								},
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetNonJSONSecretValue,
+			},
+			want: nil,
+		},
+		{
 			name: "it should be able to iterate through the available secrets",
 			have: have{
 				SyncedSecret: secretsv1.SyncedSecret{
@@ -275,7 +458,7 @@ func TestGenerateSecret(t *testing.T) {
 									Template: _s(`
 {{- $cfg := "" -}}
 {{- range $secretName, $_ := filterByTagKey .Secrets "tag1" -}}
-  {{- $secretValue := getSecretValue $secretName -}}
+  {{- $secretValue := getSecretValueMap $secretName -}}
   {{- $cfg = printf "%shost=%s user=%s password=%s\n" $cfg $secretValue.host $secretValue.user $secretValue.password -}}
 {{- end -}}
 {{- $cfg -}}
@@ -340,7 +523,7 @@ func TestGenerateSecret(t *testing.T) {
 									Template: _s(`
 {{- $cfg := "" -}}
 {{- range $secretName, $_ := filterByTagKey .Secrets "tag1" -}}
-  {{- $secretValue := getSecretValue $secretName -}}
+  {{- $secretValue := getSecretValueMap $secretName -}}
   {{- $cfg = printf "%shost=%s user=%s password=%s\n" $cfg $secretValue.host $secretValue.user $secretValue.password -}}
 {{- end -}}
 {{- $cfg -}}
@@ -373,7 +556,7 @@ func TestGenerateSecret(t *testing.T) {
 									Template: _s(`
 {{- $cfg := ""  # INVALID
 {{- range $secretName, $_ := filterByTagKey .Secrets "tag1" -}}
-  {{- $secretValue := getSecretValue $secretName -}}
+  {{- $secretValue := getSecretValueMap $secretName -}}
   {{- $cfg = printf "%shost=%s user=%s password=%s\n" $cfg $secretValue.host $secretValue.user $secretValue.password -}}
 {{- end -}}
 {{- $cfg -}}

@@ -42,7 +42,7 @@ metadata:
 spec:
   IAMRole: iam_role
   dataFrom:
-    secretMapRef:
+    secretRef:
       name: secretsyncer/secret/sample
 ```
 
@@ -73,6 +73,25 @@ spec:
         key: access_key
 ```
 
+You can also chose to store non-JSON values in AWS Secret Manager, which might be more convenient for data such
+as certificates.
+
+```
+apiVersion: secrets.contentful.com/v1
+kind: SyncedSecret
+metadata:
+  name: demo-service-secret
+  namespace: secret-sync
+spec:
+  IAMRole: iam_role
+  data:
+    # Sets the key ssl-certificate for the Kubernetes Secret "demo-service-secret"
+    # to the value of the secret "apache/ssl-cert"
+    - name: ssl-certificate
+      valueFrom:
+        secretRef:
+          name: apache/ssl-cert
+```
 
 ## [Templated fields](#templated-fields)
 
@@ -93,7 +112,7 @@ spec:
         template: |
           {{- $cfg := "" -}}
           {{- range $secretID, $_ := filterByTagKey .Secrets "tag1" -}}
-            {{- $secretValue := getSecretValue $secretID -}}
+            {{- $secretValue := getSecretValueMap $secretID -}}
             {{- $cfg = printf "%shost=%s user=%s password=%s\n" $cfg $secretValue.host $secretValue.user $secretValue.password -}}
           {{- end -}}
           {{- $cfg -}}
@@ -106,7 +125,9 @@ the Kubernetes secret pgbouncer.txt.
 The template is a [Go template](https://golang.org/pkg/text/template/) with the following elements defined:
  * .Secrets - a map containing all listed secrets (without their value)
  * filterByTagKey - a helper function to filter the secrets by tag
- * getSecretValue - will retrieve the value of a Secret in SecretsManager, given its secret ID
+ * getSecretValue - will retrieve the raw value of a Secret in SecretsManager, given its secret ID
+ * getSecretValueMap - will retrieve the value of a Secret in SecretsManager that contains a JSON, given its secret ID -
+ as a map
 
 ## [Caching](#caching)
 

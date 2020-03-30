@@ -17,7 +17,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"os"
@@ -144,18 +143,13 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	return ctrl.Result{}, nil
 }
 
-func (r *SyncedSecretReconciler) templateSecretGetter(secretID string, IAMRole string) (map[string]interface{}, error) {
+func (r *SyncedSecretReconciler) templateSecretGetter(secretID string, IAMRole string) (string, error) {
 	secretString, _, err := r.poller.GetSecret(aws.String(secretID), IAMRole)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("error retrieving secret %s", secretID))
+		return "", errors.WithMessage(err, fmt.Sprintf("error retrieving secret %s", secretID))
 	}
 
-	data := map[string]interface{}{}
-	if err := json.Unmarshal([]byte(secretString), &data); err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("error unmarshalling secret value for secretId %s", secretID))
-	}
-
-	return data, err
+	return secretString, err
 }
 
 // createSecret creates a k8s Secret from a SyncedSecret
