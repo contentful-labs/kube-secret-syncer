@@ -3,9 +3,7 @@ package controllers
 import (
 	"context"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"os"
 	"reflect"
-	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -17,36 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
-
-func TestGetPollInterval(t *testing.T) {
-	defer os.Unsetenv("POLL_INTERVAL_SEC")
-
-	for _, test := range []struct {
-		have string
-		want time.Duration
-	}{
-		{
-			have: "",
-			want: defaultPollInterval,
-		},
-		{
-			have: "1000",
-			want: time.Second * time.Duration(1000),
-		},
-	} {
-		if test.have != "" {
-			os.Setenv("POLL_INTERVAL_SEC", test.have)
-		}
-		got, err := getPollInterval()
-		if err != nil {
-			t.Errorf("error getting poll interval: %s", err)
-		}
-		if got != test.want {
-			t.Errorf("poller interval: wanted %s got %s", test.want, got)
-		}
-
-	}
-}
 
 var _ = Describe("SyncedSecret Controller", func() {
 	const timeout = time.Minute * 3

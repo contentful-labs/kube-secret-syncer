@@ -19,9 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
-	"strconv"
 	"sync"
 	"time"
 
@@ -56,6 +54,7 @@ type SyncedSecretReconciler struct {
 	poller        *secretsmanager.Poller
 	getNamespace  k8snamespace.NamespaceGetter
 	RoleValidator RoleValidator
+	PollInterval  time.Duration
 	Log           logr.Logger
 	wg            sync.WaitGroup
 
@@ -196,30 +195,8 @@ func (r *SyncedSecretReconciler) Quit() {
 	r.wg.Wait()
 }
 
-const defaultPollInterval = time.Minute * 5
-
-func getPollInterval() (time.Duration, error) {
-	value, ok := os.LookupEnv("POLL_INTERVAL_SEC")
-	if ok {
-		if value == "" {
-			return defaultPollInterval, nil
-		}
-
-		valueInt, err := strconv.Atoi(value)
-		if err == nil {
-			interval := time.Second * time.Duration(valueInt)
-			return interval, nil
-		}
-		return 0 * time.Second, fmt.Errorf("POLL_INTERVAL_SEC invalid: %s", value)
-	}
-	return defaultPollInterval, nil
-}
-
 func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	interval, err := getPollInterval()
-	if err != nil {
-		return err
-	}
+	var err error
 
 	errs := make(chan error)
 	go func() {
@@ -250,7 +227,7 @@ func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		metrics.Registry.MustRegister(metric)
 	}
 
-	if r.poller, err = secretsmanager.New(interval, errs, r.GetSMClient); err != nil {
+	if r.poller, err = secretsmanager.New(r.PollInterval, errs, r.GetSMClient); err != nil {
 		return err
 	}
 
