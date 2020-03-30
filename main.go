@@ -129,9 +129,9 @@ func realMain() int {
 		annotationName = "iam.amazonaws.com/allowed-roles"
 	}
 
-	syncPeriod, err := getDurationFromEnv("SYNC_PERIOD_SEC", 120*time.Second)
+	syncPeriod, err := getDurationFromEnv("SYNC_INTERVAL_SEC", 120*time.Second)
 	if err != nil {
-		setupLog.Error(err, "failed parsing SYNC_PERIOD_SEC: should be an integer")
+		setupLog.Error(err, "failed parsing SYNC_INTERVAL_SEC: should be an integer")
 		return 1
 	}
 

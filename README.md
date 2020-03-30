@@ -153,6 +153,20 @@ The secret sync will be denied if:
  * the annotation is set on the namespace and does not contains the secrets IAMRole
  * the annotation is set on the namespace and the secret has no IAMRole set
 
+## Configuration
+
+K8s-secret-syncer supports the following environment variables:
+
+ * `POLL_INTERVAL_SEC`: how often the list of secrets in cache is refreshed (default: `300`)
+ * `SYNC_INTERVAL_SEC`: how often we will write to a Kubernetes secret (default: `120`)
+ * `NS_ANNOTATION`: the annotation on the namespace that contains a list of IAM roles k8s-secret-syncer is allowed
+  to assume (default: `iam.amazonaws.com/allowed-roles`)
+ * `METRICS_LISTEN`: what interface/port the metrics server shoult listen on (default: `:8080`)
+
+Note  - when a secret in Secrets Manager is updated, the secret in Kubernetes will not be updated
+until both the list of secrets is refreshed AND the sync_interval expires - therefore it might take up
+to POLL_INTERVAL_SEC + SYNC_INTERVAL_SEC.
+
 ## Local development
 
 Please refer to [local-development documentation](docs/development.md)
