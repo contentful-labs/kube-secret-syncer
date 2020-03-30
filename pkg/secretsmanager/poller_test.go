@@ -22,22 +22,22 @@ func TestGetCurrentVersion(t *testing.T) {
 	}{
 		{
 			have: map[string][]*string{
-				"currentuuid": []*string{&currV},
+				"currentuuid": {&currV},
 			},
 			want: "currentuuid",
 			err:  nil,
 		},
 		{
 			have: map[string][]*string{
-				"prevuuid": []*string{&prevV},
+				"prevuuid": {&prevV},
 			},
 			want: "",
 			err:  errors.New("version with stage AWSCURRENT not found"),
 		},
 		{
 			have: map[string][]*string{
-				"oldversionuuid": []*string{&prevV},
-				"newversionuuid": []*string{&currV},
+				"oldversionuuid": {&prevV},
+				"newversionuuid": {&currV},
 			},
 			want: "newversionuuid",
 			err:  nil,
