@@ -106,8 +106,6 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 
-	os.Setenv("POLL_INTERVAL_SEC", "3")
-
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
@@ -176,6 +174,7 @@ var _ = BeforeSuite(func(done Done) {
 		RoleValidator: &mockRoleValidator{},
 		gauges:        map[string]prometheus.Gauge{},
 		sync_state:    map[string]bool{},
+		PollInterval:  3*time.Second,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

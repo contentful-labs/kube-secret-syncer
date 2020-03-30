@@ -17,7 +17,7 @@ package main
 
 import (
 	"context"
-	"flag"
+	"fmt"
 	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
 	"math/rand"
 	"os"
@@ -64,6 +64,25 @@ type SMSVCFactory struct {
 	AssumedSMSVCs map[string]secretsmanageriface.SecretsManagerAPI // SM Service for each IAM Role
 }
 
+
+func getDurationFromEnv(envVar string, defaultDuration time.Duration) (time.Duration, error) {
+	value, ok := os.LookupEnv(envVar)
+	if ok {
+		if value == "" {
+			return defaultDuration, nil
+		}
+
+		valueInt, err := strconv.Atoi(value)
+		if err == nil {
+			interval := time.Second * time.Duration(valueInt)
+			return interval, nil
+		}
+		return 0 * time.Second, fmt.Errorf("%s invalid: %s", envVar, value)
+	}
+	return defaultDuration, nil
+}
+
+
 func (s SMSVCFactory) getSMSVC(iamRole string) (secretsmanageriface.SecretsManagerAPI, error) {
 	var smsvc secretsmanageriface.SecretsManagerAPI
 	var err error
@@ -100,12 +119,27 @@ func newSMSVCFactory(sess *session.Session, arnGetter iam.ARNGetter) *SMSVCFacto
 }
 
 func realMain() int {
-	var metricsAddr string
-	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	flag.Parse()
+	metricsAddr := os.Getenv("METRICS_LISTEN")
+	if metricsAddr == "" {
+		metricsAddr = ":8080"
+	}
+
+	annotationName := os.Getenv("NS_ANNOTATION")
+	if annotationName == "" {
+		annotationName = "iam.amazonaws.com/allowed-roles"
+	}
+
+	syncPeriod, err := getDurationFromEnv("SYNC_PERIOD_SEC", 120*time.Second)
+	if err != nil {
+		setupLog.Error(err, "failed parsing SYNC_PERIOD_SEC: should be an integer")
+		return 1
+	}
+
+	pollInterval, err := getDurationFromEnv("POLL_INTERVAL_SEC", 300*time.Second)
+	if err != nil {
+		setupLog.Error(err, "failed parsing POLL_INTERVAL_SEC: should be an integer")
+		return 1
+	}
 
 	logCfg := zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
@@ -123,20 +157,10 @@ func realMain() int {
 	stackTraceLevel := uzap.NewAtomicLevelAt(zapcore.PanicLevel)
 	ctrl.SetLogger(zap.New(zap.Encoder(zapcore.NewJSONEncoder(logCfg)), zap.StacktraceLevel(&stackTraceLevel)))
 
-	syncPeriodEnv := os.Getenv("SYNC_PERIOD_SEC")
-	if syncPeriodEnv == "" {
-		syncPeriodEnv = "120"
-	}
-	syncPeriodSec, err := strconv.ParseUint(syncPeriodEnv, 10, 32)
-	if err != nil {
-		setupLog.Error(err, "failed parsing SYNC_PERIOD_SEC: Should be an integer")
-	}
-	syncPeriod := time.Duration(syncPeriodSec) * time.Second
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
+		LeaderElection:     true,
 		SyncPeriod:         &syncPeriod,
 	})
 	if err != nil {
@@ -156,7 +180,7 @@ func realMain() int {
 		return 1
 	}
 
-	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache)
+	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache, annotationName)
 
 	r := &controllers.SyncedSecretReconciler{
 		Client:        mgr.GetClient(),
@@ -165,6 +189,7 @@ func realMain() int {
 		Sess:          session.New(Retry5Cfg),
 		GetSMClient:   smsvcfactory.getSMSVC,
 		RoleValidator: roleValidator,
+		PollInterval:  pollInterval,
 	}
 
 	// Introduce artificial startup delay so that all controllers do not start
