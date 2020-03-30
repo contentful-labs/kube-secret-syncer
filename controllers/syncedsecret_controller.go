@@ -51,15 +51,14 @@ type RoleValidator interface {
 // SyncedSecretReconciler reconciles a SyncedSecret object
 type SyncedSecretReconciler struct {
 	client.Client
-	Ctx               context.Context
-	Sess              *session.Session
-	GetSMClient       func(string) (secretsmanageriface.SecretsManagerAPI, error)
-	poller            *secretsmanager.Poller
-	getNamespace      k8snamespace.NamespaceGetter
-	RoleValidator     RoleValidator
-	Log               logr.Logger
-	ReconcileInterval time.Duration
-	wg                sync.WaitGroup
+	Ctx           context.Context
+	Sess          *session.Session
+	GetSMClient   func(string) (secretsmanageriface.SecretsManagerAPI, error)
+	poller        *secretsmanager.Poller
+	getNamespace  k8snamespace.NamespaceGetter
+	RoleValidator RoleValidator
+	Log           logr.Logger
+	wg            sync.WaitGroup
 
 	gauges     map[string]prometheus.Gauge
 	sync_state map[string]bool
@@ -78,7 +77,6 @@ const (
 func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var err error
 	var cs secretsv1.SyncedSecret
-	const defaultReconcileInterval = 120
 
 	defer r.updatePrometheus(r.sync_state)
 
@@ -143,7 +141,7 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 
 	r.sync_state[cs.Name] = true
 
-	return ctrl.Result{RequeueAfter: r.ReconcileInterval}, nil
+	return ctrl.Result{}, nil
 }
 
 func (r *SyncedSecretReconciler) templateSecretGetter(secretID string, IAMRole string) (map[string]interface{}, error) {
