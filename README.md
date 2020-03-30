@@ -153,6 +153,7 @@ The secret sync will be denied if:
  * the annotation is set on the namespace and does not contains the secrets IAMRole
  * the annotation is set on the namespace and the secret has no IAMRole set
 
+
 ## Local development
 
 Please refer to [local-development documentation](docs/development.md)
