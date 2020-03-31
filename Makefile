@@ -25,6 +25,8 @@ else
 	SED_I=sed -i ''
 endif
 
+.PHONY: docs
+
 all: manager
 
 # Run tests
@@ -60,7 +62,7 @@ update-cf-infra-stacks:
 	@echo "Don't forget to run template-kubeconfigs"
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
+manifests: controller-gen docs
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
@@ -87,6 +89,21 @@ docker-build:
 # Push the docker image
 # docker-push:
 #	docker push ${IMG}
+
+docs-gen: 
+ifeq (, $(shell which crd-ref-docs))
+	go get -u github.com/elastic/crd-ref-docs
+GEN_DOCS=$(GOBIN)/crd-ref-docs
+else
+GEN_DOCS=$(shell which crd-ref-docs)
+endif
+	ASCII_DOC=docker run -it -v $(shell pwd)/docs:/documents/ asciidoctor/docker-asciidoctor
+
+docs: docs-gen
+	docker pull asciidoctor/docker-asciidoctor
+	$(GEN_DOCS) --config docs/_config/config.yaml --source-path "./api/v1/" --renderer asciidoctor --templates-dir docs/_template/asciidoctor/ --output-path docs/api.adoc
+	$(ASCII_DOC) asciidoctor api.adoc -a stylesheet! -b xhtml5 -o api.md -s
+	rm docs/api.adoc
 
 kind:
 	docker tag contentful-labs/k8s-secret-syncer:latest secret-syncer:kind

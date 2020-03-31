@@ -28,3 +28,7 @@ out/
 
 # go binary built with `go build -a -o manager main.go`
 manager
+
+# jekyll site output
+docs/_site
+docs/Gemfile*
