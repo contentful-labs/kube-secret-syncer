@@ -1,4 +1,10 @@
 version: 2.1
+executors:
+  docker-publisher:
+    environment:
+      IMAGE_NAME: contentful/k8s-secret-syncer
+    machine:
+      docker_layer_caching: true
 jobs:
   test:
     machine:
