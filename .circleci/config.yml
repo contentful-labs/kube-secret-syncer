@@ -1,6 +1,12 @@
 version: 2.1
+executors:
+  docker-publisher:
+    environment:
+      IMAGE_NAME: contentful/k8s-secret-syncer
+    machine:
+      docker_layer_caching: true
 jobs:
-  build:
+  test:
     machine:
       image: ubuntu-1604:201903-01
     environment:
@@ -12,8 +18,89 @@ jobs:
           command: |
             bash <(curl -s https://codecov.io/bash)
           when: on_success
-      - run: make docker-build
-workflows:
   build:
+    executor: docker-publisher
+    steps:
+      - checkout
+      - run: make docker-build
+      - run:
+          name: Archive Docker image
+          command: docker save -o image.tar contentful-labs/k8s-secret-syncer
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./image.tar
+  publish-branch:
+    executor: docker-publisher
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Load archived Docker image
+          command: docker load -i /tmp/workspace/image.tar
+      - run:
+          name: publish docker image with branch
+          command: |
+            docker tag contentful-labs/k8s-secret-syncer:latest $IMAGE_NAME:$CIRCLE_BRANCH
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $IMAGE_NAME:$CIRCLE_BRANCH
+  publish-tag:
+    executor: docker-publisher
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Load archived Docker image
+          command: docker load -i /tmp/workspace/image.tar
+      - run:
+          name: publish docker image with tag
+          command: |
+            docker tag contentful-labs/k8s-secret-syncer:latest $IMAGE_NAME:$CIRCLE_TAG
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $IMAGE_NAME:$CIRCLE_TAG
+  publish-master:
+    executor: docker-publisher
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Load archived Docker image
+          command: docker load -i /tmp/workspace/image.tar
+      - run:
+          name: publish docker image with latest tag
+          command: |
+            docker tag contentful-labs/k8s-secret-syncer:latest $IMAGE_NAME:latest
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $IMAGE_NAME:latest
+workflows:
+  version: 2
+  flow:
     jobs:
+      - test
       - build
+      - publish-branch:
+          requires:
+            - build
+            - test
+          filters:
+            branches:
+              ignore:
+                - master
+                - /pull\/[0-9]+/
+      - publish-tag:
+          #  Only run this job on git tag pushes
+          requires:
+            - build
+            - test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.*)*/
+      - publish-master:
+          requires:
+            - build
+            - test
+          filters:
+            branches:
+              only: master
