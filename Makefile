@@ -101,7 +101,7 @@ endif
 
 docs: docs-gen
 	docker pull asciidoctor/docker-asciidoctor
-	$(GEN_DOCS) --config docs/_config/config.yaml --source-path "./api/v1/" --renderer asciidoctor --templates-dir docs/_template/asciidoctor/ --output-path docs/api.adoc
+	$(GEN_DOCS) --config docs/_doc.yaml --source-path "./api/v1/" --renderer asciidoctor --templates-dir docs/_template/asciidoctor/ --output-path docs/api.adoc
 	$(ASCII_DOC) asciidoctor api.adoc -a stylesheet! -b xhtml5 -o api.md -s
 	rm docs/api.adoc
 
