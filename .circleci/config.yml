@@ -82,7 +82,7 @@ workflows:
                 - master
                 - /pull\/[0-9]+/
       - publish-tag:
-          # Only run this job on git tag pushes
+          #  Only run this job on git tag pushes
           requires:
             - build
             - test
