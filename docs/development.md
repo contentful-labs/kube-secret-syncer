@@ -22,7 +22,7 @@ instructions to get setup with a working local cluster.
 
 You should now be able to run `make docker-build kind` and have the controller run in your local cluster. The
 namespace and CRD for use with kind is available in
-[config/samples/secrets_v1_syncedsecret.yaml](../config/samples/secrets_v1_awssecret.yaml). You can apply these using
+[config/samples/secrets_v1_syncedsecret.yaml](../config/samples/secrets_v1_syncedsecret.yaml). You can apply these using
 `kubectl apply -f config/samples/secrets_v1_syncedsecret.yaml --context kubernetes-admin@kind`.
 
 Additionaly, to ensure all tests pass, run `make tests`.
