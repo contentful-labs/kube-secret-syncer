@@ -55,6 +55,7 @@ operator:
 	@find ${OP_OUT} -type f -name "*.yaml" -print0 | xargs -0 ${SED_I} '/^  creationTimestamp: null/d'
 	@echo "built operators in ${OP_OUT}"
 
+# TODO: Move to internal repo
 update-cf-infra-stacks:
 	@$(MAKE) OP_OUT=../cf-infra-stacks/kubeconfig_templates/namespace_types/k8s-secret-sync/k8s-secret-syncer/operator operator
 	@echo "Don't forget to run template-kubeconfigs"
