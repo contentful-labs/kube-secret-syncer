@@ -26,14 +26,14 @@ K8s-secret-syncer improves on this approach:
 
 ## Defining mapping between an AWS SecretsManager secret and a Kubernetes Secret
 
-The following resource will map the AWS Secret ```secretsyncer/secret/sample``` to the Kubernetes Secret
-```demo-service-secret```, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For
+The following resource will map the AWS Secret `secretsyncer/secret/sample` to the Kubernetes Secret
+`demo-service-secret`, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For
  this example, the AWS SecretsManager secret needs to be a valid JSON consisting only of key-value pairs.
 
-To access the secrets, k8s-secret-syncer will assume the role ```iam_role``` to poll the secret. Note: that role must be
+To access the secrets, k8s-secret-syncer will assume the role `iam_role` to poll the secret. Note: that role must be
  assumed by the Kubernetes cluster/node where the operator runs, eg part of the kube2iam annotation on the namespace.
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
@@ -49,7 +49,7 @@ spec:
 If you only need to retrieve select keys in a single AWS secret, or multiple keys from different AWS secrets, you
 can use the following syntax:
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
@@ -76,7 +76,7 @@ spec:
 You can also chose to store non-JSON values in AWS Secret Manager, which might be more convenient for data such
 as certificates.
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
@@ -98,7 +98,7 @@ spec:
 K8s-secret-syncer supports templated fields. This allows, for example, to iterate over a list of secrets that
 share the same tag, to output a configuration file, such as in the following example:
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
@@ -123,10 +123,10 @@ and for each of these, add a configuration line to $cfg. $cfg is then assigned t
 the Kubernetes secret pgbouncer.txt.
 
 The template is a [Go template](https://golang.org/pkg/text/template/) with the following elements defined:
- * .Secrets - a map containing all listed secrets (without their value)
- * filterByTagKey - a helper function to filter the secrets by tag
- * getSecretValue - will retrieve the raw value of a Secret in SecretsManager, given its secret ID
- * getSecretValueMap - will retrieve the value of a Secret in SecretsManager that contains a JSON, given its secret ID -
+ * `.Secrets` - a map containing all listed secrets (without their value)
+ * `filterByTagKey` - a helper function to filter the secrets by tag
+ * `getSecretValue` - will retrieve the raw value of a Secret in SecretsManager, given its secret ID
+ * `getSecretValueMap` - will retrieve the value of a Secret in SecretsManager that contains a JSON, given its secret ID -
  as a map
 
 ## [Caching](#caching)
@@ -169,8 +169,8 @@ to POLL_INTERVAL_SEC + SYNC_INTERVAL_SEC.
 
 ## Local development
 
-Please refer to [local-development documentation](docs/development.md)
+Please refer to the [local development documentation](docs/development.md).
 
 ## Examples
 
-See [sample configurations](config/samples)
+See [sample configurations](config/samples).
