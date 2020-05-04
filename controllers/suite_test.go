@@ -174,7 +174,7 @@ var _ = BeforeSuite(func(done Done) {
 		RoleValidator: &mockRoleValidator{},
 		gauges:        map[string]prometheus.Gauge{},
 		sync_state:    map[string]bool{},
-		PollInterval:  3*time.Second,
+		PollInterval:  3 * time.Second,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
