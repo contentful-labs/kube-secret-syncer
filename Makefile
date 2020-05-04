@@ -56,7 +56,7 @@ operator:
 	@echo "built operators in ${OP_OUT}"
 
 update-cf-infra-stacks:
-	@$(MAKE) OP_OUT=../cf-infra-stacks/kubeconfig_templates/namespace_types/secret-sync/k8s-secret-syncer/operator operator
+	@$(MAKE) OP_OUT=../cf-infra-stacks/kubeconfig_templates/namespace_types/k8s-secret-sync/k8s-secret-syncer/operator operator
 	@echo "Don't forget to run template-kubeconfigs"
 
 # Generate manifests e.g. CRD, RBAC etc.
@@ -91,15 +91,15 @@ docker-build:
 kind:
 	docker tag contentful-labs/k8s-secret-syncer:latest k8s-secret-syncer:kind
 	kind load docker-image k8s-secret-syncer:kind
-	@kubectl --context=${KIND_CTX} apply -f config/samples/secret-sync-ns.yaml
+	@kubectl --context=${KIND_CTX} apply -f config/samples/k8s-secret-sync-ns.yaml
 	
-	@kubectl --context=${KIND_CTX} -n secret-sync delete --ignore-not-found configmap aws-creds
-	@kubectl --context=${KIND_CTX} -n secret-sync create configmap aws-creds \
+	@kubectl --context=${KIND_CTX} -n k8s-secret-sync delete --ignore-not-found configmap aws-creds
+	@kubectl --context=${KIND_CTX} -n k8s-secret-sync create configmap aws-creds \
 	--from-literal=AWS_ACCESS_KEY_ID=$(shell aws configure get aws_access_key_id --profile ${AWS_KIND_PROFILE}) \
 	--from-literal=AWS_SECRET_ACCESS_KEY=$(shell aws configure get aws_secret_access_key --profile ${AWS_KIND_PROFILE}) \
 	--from-literal=AWS_SESSION_TOKEN=$(shell aws configure get aws_session_token --profile ${AWS_KIND_PROFILE})
 
-	@kubectl --context=${KIND_CTX} -n secret-sync delete deployment k8s-secret-syncer-controller --ignore-not-found=true
+	@kubectl --context=${KIND_CTX} -n k8s-secret-sync delete deployment k8s-secret-syncer-controller --ignore-not-found=true
 	kustomize build config/overlays/kind | kubectl apply --context=${KIND_CTX} -f -
 
 # find or download controller-gen

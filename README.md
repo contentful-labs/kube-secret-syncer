@@ -38,7 +38,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   dataFrom:
@@ -54,7 +54,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   data:
@@ -81,7 +81,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   data:
@@ -103,7 +103,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: pgbouncer.txt
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   data:
