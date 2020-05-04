@@ -1,6 +1,6 @@
 # K8s-secret-syncer
 
-K8s-Secrets-syncer is a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) developed
+K8s-secret-syncer is a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) developed
 using [the Kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder) that keeps the values of Kubernetes
 Secrets synchronised to secrets in AWS Secrets Manager.
 
@@ -138,7 +138,7 @@ K8s-secret-syncer maintains both the list of AWS Secrets as well as their values
 
 By default, k8s-secret-syncer will use the Kubernetes node's IAM role to list and retrieve the secrets. However, when
 synced secrets have an IAMRole field defined, k8s-secret-syncer will assume that role before retrieving the secret. This
-implies that the role specified by IAMRole can be assumed by the role of the Kubernetes node secret-syncer runs on.
+implies that the role specified by IAMRole can be assumed by the role of the Kubernetes node k8s-secret-syncer runs on.
 
 To ensure a specific namespace only has access to the secrets it needs to, k8s-secret-syncer will use the
 "iam.amazonaws.com/allowed-roles" annotation on the namespace (originally used by kube2iam) to validate that this
