@@ -10,8 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        # TODO: Should this role be names k8s-secret-syncer
-        iam.amazonaws.com/role: "{{ .IAMRoles.k8s_secret_syncer }}"
+        iam.amazonaws.com/role: "{{ .IAMRoles.K8sSecretSyncer }}"
       labels:
     spec:
       containers:
@@ -21,7 +20,7 @@ spec:
         - --enable-leader-election
         env:
         - name: AWS_REGION
-          value: '{{ default "us-east-1" .SecretSyncer.Region }}'
+          value: '{{ default "us-east-1" .K8sSecretSyncer.Region }}'
         image: "{{ $.DockerRegistry }}/contentful/k8s-secret-syncer"
         name: k8s-secret-syncer
         resources:
