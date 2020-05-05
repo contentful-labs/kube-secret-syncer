@@ -39,26 +39,12 @@ manager: generate fmt vet
 run: generate fmt vet manifests
 	go run ./main.go
 
-# Install CRDs into a cluster
-# install: manifests
-# 	kustomize build config/crd | kubectl apply -f -
-
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-# deploy: manifests
-# 	cd config/manager && kustomize edit set image controller=${IMG}
-# 	kustomize build config/default | kubectl apply -f -
-
 operator: 
 	@rm -rf ${OP_OUT}
 	@mkdir -p ${OP_OUT}
 	@kustomize build config/default -o ${OP_OUT}/
 	@find ${OP_OUT} -type f -name "*.yaml" -print0 | xargs -0 ${SED_I} '/^  creationTimestamp: null/d'
 	@echo "built operators in ${OP_OUT}"
-
-# TODO: Move to internal repo
-update-cf-infra-stacks:
-	@$(MAKE) OP_OUT=../cf-infra-stacks/kubeconfig_templates/namespace_types/k8s-secret-sync/k8s-secret-syncer/operator operator
-	@echo "Don't forget to run template-kubeconfigs"
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -84,10 +70,6 @@ docker-test:
 # Build the docker image
 docker-build: 
 	docker build . -t ${IMG}
-
-# Push the docker image
-# docker-push:
-#	docker push ${IMG}
 
 kind:
 	docker tag contentful-labs/k8s-secret-syncer:latest k8s-secret-syncer:kind
