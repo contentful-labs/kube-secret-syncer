@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller
+  labels:
+spec:
+  selector:
+    matchLabels:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        # TODO: Should this role be names k8s-secret-syncer
+        iam.amazonaws.com/role: "{{ .IAMRoles.k8s_secret_syncer }}"
+      labels:
+    spec:
+      containers:
+      - command:
+        - /manager
+        args:
+        - --enable-leader-election
+        env:
+        - name: AWS_REGION
+          value: '{{ default "us-east-1" .SecretSyncer.Region }}'
+        image: "{{ $.DockerRegistry }}/contentful/k8s-secret-syncer"
+        name: k8s-secret-syncer
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+      terminationGracePeriodSeconds: 10

@@ -1,6 +1,6 @@
 # K8s-secret-syncer
 
-K8s-Secrets-syncer is a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) developed
+K8s-secret-syncer is a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) developed
 using [the Kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder) that keeps the values of Kubernetes
 Secrets synchronised to secrets in AWS Secrets Manager.
 
@@ -26,19 +26,19 @@ K8s-secret-syncer improves on this approach:
 
 ## Defining mapping between an AWS SecretsManager secret and a Kubernetes Secret
 
-The following resource will map the AWS Secret ```secretsyncer/secret/sample``` to the Kubernetes Secret
-```demo-service-secret```, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For
+The following resource will map the AWS Secret `secretsyncer/secret/sample` to the Kubernetes Secret
+`demo-service-secret`, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For
  this example, the AWS SecretsManager secret needs to be a valid JSON consisting only of key-value pairs.
 
-To access the secrets, k8s-secret-syncer will assume the role ```iam_role``` to poll the secret. Note: that role must be
+To access the secrets, k8s-secret-syncer will assume the role `iam_role` to poll the secret. Note: that role must be
  assumed by the Kubernetes cluster/node where the operator runs, eg part of the kube2iam annotation on the namespace.
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   dataFrom:
@@ -49,12 +49,12 @@ spec:
 If you only need to retrieve select keys in a single AWS secret, or multiple keys from different AWS secrets, you
 can use the following syntax:
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   data:
@@ -76,12 +76,12 @@ spec:
 You can also chose to store non-JSON values in AWS Secret Manager, which might be more convenient for data such
 as certificates.
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   data:
@@ -98,12 +98,12 @@ spec:
 K8s-secret-syncer supports templated fields. This allows, for example, to iterate over a list of secrets that
 share the same tag, to output a configuration file, such as in the following example:
 
-```
+```yaml
 apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: pgbouncer.txt
-  namespace: secret-sync
+  namespace: k8s-secret-sync
 spec:
   IAMRole: iam_role
   data:
@@ -123,10 +123,10 @@ and for each of these, add a configuration line to $cfg. $cfg is then assigned t
 the Kubernetes secret pgbouncer.txt.
 
 The template is a [Go template](https://golang.org/pkg/text/template/) with the following elements defined:
- * .Secrets - a map containing all listed secrets (without their value)
- * filterByTagKey - a helper function to filter the secrets by tag
- * getSecretValue - will retrieve the raw value of a Secret in SecretsManager, given its secret ID
- * getSecretValueMap - will retrieve the value of a Secret in SecretsManager that contains a JSON, given its secret ID -
+ * `.Secrets` - a map containing all listed secrets (without their value)
+ * `filterByTagKey` - a helper function to filter the secrets by tag
+ * `getSecretValue` - will retrieve the raw value of a Secret in SecretsManager, given its secret ID
+ * `getSecretValueMap` - will retrieve the value of a Secret in SecretsManager that contains a JSON, given its secret ID -
  as a map
 
 ## [Caching](#caching)
@@ -138,7 +138,7 @@ K8s-secret-syncer maintains both the list of AWS Secrets as well as their values
 
 By default, k8s-secret-syncer will use the Kubernetes node's IAM role to list and retrieve the secrets. However, when
 synced secrets have an IAMRole field defined, k8s-secret-syncer will assume that role before retrieving the secret. This
-implies that the role specified by IAMRole can be assumed by the role of the Kubernetes node secret-syncer runs on.
+implies that the role specified by IAMRole can be assumed by the role of the Kubernetes node k8s-secret-syncer runs on.
 
 To ensure a specific namespace only has access to the secrets it needs to, k8s-secret-syncer will use the
 "iam.amazonaws.com/allowed-roles" annotation on the namespace (originally used by kube2iam) to validate that this
@@ -169,8 +169,8 @@ to POLL_INTERVAL_SEC + SYNC_INTERVAL_SEC.
 
 ## Local development
 
-Please refer to [local-development documentation](docs/development.md)
+Please refer to the [local development documentation](docs/development.md).
 
 ## Examples
 
-See [sample configurations](config/samples)
+See [sample configurations](config/samples).

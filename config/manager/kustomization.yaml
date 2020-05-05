@@ -1,0 +1,4 @@
+resources:
+- manager.yaml
+commonLabels:
+  app: k8s-secret-syncer

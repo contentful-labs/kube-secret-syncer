@@ -18,11 +18,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
 	"math/rand"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
@@ -64,7 +65,6 @@ type SMSVCFactory struct {
 	AssumedSMSVCs map[string]secretsmanageriface.SecretsManagerAPI // SM Service for each IAM Role
 }
 
-
 func getDurationFromEnv(envVar string, defaultDuration time.Duration) (time.Duration, error) {
 	value, ok := os.LookupEnv(envVar)
 	if ok {
@@ -81,7 +81,6 @@ func getDurationFromEnv(envVar string, defaultDuration time.Duration) (time.Dura
 	}
 	return defaultDuration, nil
 }
-
 
 func (s SMSVCFactory) getSMSVC(iamRole string) (secretsmanageriface.SecretsManagerAPI, error) {
 	var smsvc secretsmanageriface.SecretsManagerAPI
@@ -161,6 +160,7 @@ func realMain() int {
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     true,
+		LeaderElectionID:   "5a48bfe8.contentful.com",
 		SyncPeriod:         &syncPeriod,
 	})
 	if err != nil {
