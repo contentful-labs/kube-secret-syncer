@@ -22,19 +22,27 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// SecretRef secret ref
 type SecretRef struct {
+	// Secret Name
 	Name *string `json:"name"`
 }
 
+// DataFrom data from
 type DataFrom struct {
+	// SecretRef
 	SecretRef *SecretRef `json:"secretRef,omitempty"`
 }
 
+// SecretKeyRef secret key ref
 type SecretKeyRef struct {
+	// Secret Name
 	Name *string `json:"name"`
-	Key  *string `json:"key"`
+	// Secret Key
+	Key *string `json:"key"`
 }
 
+// ValueFrom value from
 type ValueFrom struct {
 	// SecretRef
 	// +optional
@@ -49,7 +57,9 @@ type ValueFrom struct {
 	Template *string `json:"template,omitempty"`
 }
 
+// SecretField secret field
 type SecretField struct {
+	// secret Name
 	Name *string `json:"name"`
 
 	// Value
@@ -94,6 +104,7 @@ type SyncedSecretStatus struct {
 	SecretHash string `json:"generatedSecretHash,omitempty"`
 }
 
+// +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
