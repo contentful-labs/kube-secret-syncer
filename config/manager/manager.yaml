@@ -21,7 +21,7 @@ spec:
         env:
         - name: AWS_REGION
           value: '{{ default "us-east-1" .K8sSecretSyncer.Region }}'
-        image: "{{ $.DockerRegistry }}/contentful/k8s-secret-syncer"
+        image: "contentful/k8s-secret-syncer{{ .K8sSecretSyncer.ImageTag }}"
         name: k8s-secret-syncer
         resources:
           limits:
