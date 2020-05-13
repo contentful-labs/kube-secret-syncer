@@ -208,6 +208,7 @@ func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		}
 	}()
 
+	r.sync_state = map[string]bool{}
 	r.gauges = map[string]prometheus.Gauge{
 		"secret_sync_success": prometheus.NewGauge(
 			prometheus.GaugeOpts{
