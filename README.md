@@ -64,13 +64,15 @@ spec:
     # Takes the value for key "password" from the Secrets Manager secret "mysql", assign to the
     # key "mysql_pw" of the Kubernetes secret "demo-service-secret"
     - name: mysql_pw
-      secretKeyRef:
-        name: mysql
-        key: password
+      valueFrom:
+        secretKeyRef:
+          name: mysql
+          key: password
     - name: datadog_access_key
-      secretKeyRef:
-        name: datadog
-        key: access_key
+      valueFrom:
+        secretKeyRef:
+          name: datadog
+          key: access_key
 ```
 
 You can also chose to store non-JSON values in AWS Secret Manager, which might be more convenient for data such
