@@ -24,14 +24,17 @@ K8s-secret-syncer improves on this approach:
  * supports [templated fields](#templated-fields) for Kubernetes secrets - enabling the use of values from multiple AWS
  SecretsManager secrets in one Kubernetes Secret
 
+
 ## Defining mapping between an AWS SecretsManager secret and a Kubernetes Secret
 
+### Access
+To access the secrets, k8s-secret-syncer will assume the role `iam_role` to poll the secret. Note: that role must be
+ assumed by the Kubernetes cluster/node where the operator runs, eg part of the kube2iam annotation on the namespace.
+
+### Mapping all keys-value pairs from an AWS Secret
 The following resource will map the AWS Secret `secretsyncer/secret/sample` to the Kubernetes Secret
 `demo-service-secret`, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For
  this example, the AWS SecretsManager secret needs to be a valid JSON consisting only of key-value pairs.
-
-To access the secrets, k8s-secret-syncer will assume the role `iam_role` to poll the secret. Note: that role must be
- assumed by the Kubernetes cluster/node where the operator runs, eg part of the kube2iam annotation on the namespace.
 
 ```yaml
 apiVersion: secrets.contentful.com/v1
@@ -46,6 +49,7 @@ spec:
       name: secretsyncer/secret/sample
 ```
 
+### Mapping select keys from one secret
 If you only need to retrieve select keys in a single AWS secret, or multiple keys from different AWS secrets, you
 can use the following syntax:
 
@@ -72,7 +76,10 @@ spec:
         name: datadog
         key: access_key
 ```
+### Mapping select keys from different secrets
+See above
 
+### Mapping non-JSON values
 You can also chose to store non-JSON values in AWS Secret Manager, which might be more convenient for data such
 as certificates.
 
