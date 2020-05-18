@@ -25,13 +25,89 @@ K8s-secret-syncer improves on this approach:
  SecretsManager secrets in one Kubernetes Secret
 
 
-## Defining mapping between an AWS SecretsManager secret and a Kubernetes Secret
+
+## Defining the Custom Resource
+
+To define a Kubernetes Secret to be synchronised with AWS SecretsManager, the following information is needed:
+
+Secret creation and AWS access:
+- the name of the Kubernetes Secret
+- the namespace of the Kuberenetes Secret
+- an IAM role that the syncer can assume to access the secrets
+
+Mapping:
+- what keys from what AWS Secrets should be synced to what keys in the Kubernetes Secret
+
+The secret creation and access information is represented in the CRD as below:
+```yaml
+apiVersion: secrets.contentful.com/v1
+kind: SyncedSecret
+metadata:
+  name: <kubernetes secret name>
+  namespace: <kubernetes secret namespace>
+spec:
+  IAMRole: iam_role
+  data:
+     ...
+```
 
 ### Access
 To access the secrets, k8s-secret-syncer will assume the role `iam_role` to poll the secret. Note: that role must be
  assumed by the Kubernetes cluster/node where the operator runs, eg part of the kube2iam annotation on the namespace.
+ The role needs to have the following access:
+ - ListSecrets (for all secrets stored)
+ - ListSecretVersions (for the synced secrets)
+ - GetSecretValue (for the synced secrets)
 
-### Mapping all keys-value pairs from an AWS Secret
+### Defining mapping between an AWS SecretsManager secret and a Kubernetes Secret
+
+The basic mappping we want to represent is mapping one key from an AWS secret to a key in a Kuberentes secret. The data block describing this is the following:
+
+```
+data:
+    - name: <name of the key in Kubernetes Secret>
+      secretKeyRef:
+        name: <name of the AWS Secret>
+        key: <name of the key in the AWS Secret>
+```
+
+Any number of these can be placed into the `data` field of the CRD.
+
+#### Mapping an entire secret
+
+There is a shorthand to map the entire contents (key-value pairs) from an AWS Secret. Instead of a `data` field, a `dataFrom` field needs to be defined:
+
+```
+dataFrom:
+    secretRef:
+      name: <name of the AWS Secret>
+```
+
+#### Mapping a non-JSON AWS Secret
+
+The block describing the mapping of a non-JSON AWS Secret is the following:
+
+```
+data:
+ - name: <name of the key in Kubernetes Secret>
+      valueFrom:
+        secretRef:
+          name: <name of the AWS Secret>
+```
+
+#### So how do I read this thing?
+
+- `secretRef` refers to an entire AWS Secret
+- `secretKeyRef` refers to one key in the secret
+- if the target key is not defined in the AWS Secret, it needs to be named in the data block, and is called `name`
+
+TODO 
+- what is the logic behind this use of `data`, `dataFrom`, and `valueFrom`? valueFrom is generak kubernetes for mapping key value pairs (from secrets), and here it is used differently. If I knew the motivation behind it, I might find it easier to know which one to use when. 
+
+
+### Examples 
+
+#### Mapping all keys-value pairs from an AWS Secret
 The following resource will map the AWS Secret `secretsyncer/secret/sample` to the Kubernetes Secret
 `demo-service-secret`, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For
  this example, the AWS SecretsManager secret needs to be a valid JSON consisting only of key-value pairs.
@@ -49,7 +125,7 @@ spec:
       name: secretsyncer/secret/sample
 ```
 
-### Mapping select keys from one secret
+#### Mapping select keys from one or more AWS Secret
 If you only need to retrieve select keys in a single AWS secret, or multiple keys from different AWS secrets, you
 can use the following syntax:
 
@@ -76,10 +152,8 @@ spec:
         name: datadog
         key: access_key
 ```
-### Mapping select keys from different secrets
-See above
 
-### Mapping non-JSON values
+#### Mapping non-JSON values
 You can also chose to store non-JSON values in AWS Secret Manager, which might be more convenient for data such
 as certificates.
 
