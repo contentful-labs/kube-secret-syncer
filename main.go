@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/k8snamespace"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
@@ -32,10 +32,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
-	secretsv1 "github.com/contentful-labs/k8s-secret-syncer/api/v1"
-	"github.com/contentful-labs/k8s-secret-syncer/controllers"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/iam"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/rolevalidator"
+	secretsv1 "github.com/contentful-labs/kube-secret-syncer/api/v1"
+	"github.com/contentful-labs/kube-secret-syncer/controllers"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/iam"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/rolevalidator"
 	uzap "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -1,4 +1,4 @@
-module github.com/contentful-labs/k8s-secret-syncer
+module github.com/contentful-labs/kube-secret-syncer
 
 go 1.14
 
