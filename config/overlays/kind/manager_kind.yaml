@@ -12,7 +12,7 @@ spec:
           value: eu-west-1 
         - name: POLL_INTERVAL_SEC
           value: "15"
-        image: k8s-secret-syncer:kind
+        image: kube-secret-syncer:kind
         name: k8s-secret-syncer
         envFrom:
         - configMapRef:
