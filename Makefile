@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= contentful-labs/k8s-secret-syncer
+IMG ?= contentful-labs/kube-secret-syncer
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 # Directory for storing generated manifests
@@ -72,10 +72,9 @@ docker-build:
 	docker build . -t ${IMG}
 
 kind:
-	docker tag contentful-labs/k8s-secret-syncer:latest k8s-secret-syncer:kind
-	kind load docker-image k8s-secret-syncer:kind
+	docker tag contentful-labs/kube-secret-syncer:latest kube-secret-syncer:kind
+	kind load docker-image kube-secret-syncer:kind
 	@kubectl --context=${KIND_CTX} apply -f config/samples/k8s-secret-syncer-ns.yaml
-	
 	@kubectl --context=${KIND_CTX} -n k8s-secret-syncer delete --ignore-not-found configmap aws-creds
 	@kubectl --context=${KIND_CTX} -n k8s-secret-syncer create configmap aws-creds \
 	--from-literal=AWS_ACCESS_KEY_ID=$(shell aws configure get aws_access_key_id --profile ${AWS_KIND_PROFILE}) \
