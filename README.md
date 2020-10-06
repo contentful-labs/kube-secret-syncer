@@ -1,6 +1,6 @@
-# K8s-secret-syncer
+# Kube-secret-syncer
 
-K8s-secret-syncer is a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) developed
+Kube-secret-syncer is a [Kubernetes operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) developed
 using [the Kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder) that keeps the values of Kubernetes
 Secrets synchronised to secrets in AWS Secrets Manager.
 
@@ -12,11 +12,11 @@ __WARNING__: updating the value of a secret in AWS SecretsManager will override 
 
 ## Comparison to existing projects
 
-K8s-secret-syncer is similar to other projects such as:
+Kube-secret-syncer is similar to other projects such as:
  * [Kubernetes external secrets](https://github.com/godaddy/kubernetes-external-secrets)
  * [AWS secret operator](https://github.com/mumoshu/aws-secret-operator)
 
-K8s-secret-syncer improves on this approach: 
+Kube-secret-syncer improves on this approach: 
  * uses [caching](#caching) to only retrieve the value of secrets when they have changed, substantially reducing
  [costs](https://aws.amazon.com/secrets-manager/pricing/) when syncing a large number of secrets.
  * enables sophisticated access control to secrets in AWS SecretsManager using IAM roles - see our
@@ -30,7 +30,7 @@ The following resource will map the AWS Secret `secretsyncer/secret/sample` to t
 `demo-service-secret`, and copy all key-value pairs from the AWS SecretsManager secret to the  Kubernetes secret For
  this example, the AWS SecretsManager secret needs to be a valid JSON consisting only of key-value pairs.
 
-To access the secrets, k8s-secret-syncer will assume the role `iam_role` to poll the secret. Note: that role must be
+To access the secrets, kube-secret-syncer will assume the role `iam_role` to poll the secret. Note: that role must be
  assumed by the Kubernetes cluster/node where the operator runs, eg part of the kube2iam annotation on the namespace.
 
 ```yaml
@@ -38,7 +38,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: k8s-secret-syncer
+  namespace: kube-secret-syncer
 spec:
   IAMRole: iam_role
   dataFrom:
@@ -54,7 +54,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: k8s-secret-syncer
+  namespace: kube-secret-syncer
 spec:
   IAMRole: iam_role
   data:
@@ -83,7 +83,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: demo-service-secret
-  namespace: k8s-secret-syncer
+  namespace: kube-secret-syncer
 spec:
   IAMRole: iam_role
   data:
@@ -97,7 +97,7 @@ spec:
 
 ## [Templated fields](#templated-fields)
 
-K8s-secret-syncer supports templated fields. This allows, for example, to iterate over a list of secrets that
+Kube-secret-syncer supports templated fields. This allows, for example, to iterate over a list of secrets that
 share the same tag, to output a configuration file, such as in the following example:
 
 ```yaml
@@ -105,7 +105,7 @@ apiVersion: secrets.contentful.com/v1
 kind: SyncedSecret
 metadata:
   name: pgbouncer.txt
-  namespace: k8s-secret-syncer
+  namespace: kube-secret-syncer
 spec:
   IAMRole: iam_role
   data:
@@ -120,7 +120,7 @@ spec:
           {{- $cfg -}}
 ```
 
-This iterates over all secrets k8s-secret-syncer has access to, select those that have the tag "tag1" set,
+This iterates over all secrets kube-secret-syncer has access to, select those that have the tag "tag1" set,
 and for each of these, add a configuration line to $cfg. $cfg is then assigned to the key "pgbouncer-hosts" of
 the Kubernetes secret pgbouncer.txt.
 
@@ -133,16 +133,16 @@ The template is a [Go template](https://golang.org/pkg/text/template/) with the 
 
 ## [Caching](#caching)
 
-K8s-secret-syncer maintains both the list of AWS Secrets as well as their values in cache. The list is updated every
+Kube-secret-syncer maintains both the list of AWS Secrets as well as their values in cache. The list is updated every
 `POLL_INTERVAL_SEC`, and values are retrieved whenever their VersionID changed.
 
 ## [Security model](#security-model)
 
-By default, k8s-secret-syncer will use the Kubernetes node's IAM role to list and retrieve the secrets. However, when
-synced secrets have an IAMRole field defined, k8s-secret-syncer will assume that role before retrieving the secret. This
-implies that the role specified by IAMRole can be assumed by the role of the Kubernetes node k8s-secret-syncer runs on.
+By default, kube-secret-syncer will use the Kubernetes node's IAM role to list and retrieve the secrets. However, when
+synced secrets have an IAMRole field defined, kube-secret-syncer will assume that role before retrieving the secret. This
+implies that the role specified by IAMRole can be assumed by the role of the Kubernetes node kube-secret-syncer runs on.
 
-To ensure a specific namespace only has access to the secrets it needs to, k8s-secret-syncer will use the
+To ensure a specific namespace only has access to the secrets it needs to, kube-secret-syncer will use the
 "iam.amazonaws.com/allowed-roles" annotation on the namespace (originally used by kube2iam) to validate that this
 role can be assumed for that namespace.
 
@@ -157,11 +157,11 @@ The secret sync will be denied if:
 
 ## Configuration
 
-K8s-secret-syncer supports the following environment variables:
+Kube-secret-syncer supports the following environment variables:
 
  * `POLL_INTERVAL_SEC`: how often the list of secrets in cache is refreshed (default: `300`)
  * `SYNC_INTERVAL_SEC`: how often we will write to a Kubernetes secret (default: `120`)
- * `NS_ANNOTATION`: the annotation on the namespace that contains a list of IAM roles k8s-secret-syncer is allowed
+ * `NS_ANNOTATION`: the annotation on the namespace that contains a list of IAM roles kube-secret-syncer is allowed
   to assume (default: `iam.amazonaws.com/allowed-roles`)
  * `METRICS_LISTEN`: what interface/port the metrics server shoult listen on (default: `:8080`)
 

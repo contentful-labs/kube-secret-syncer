@@ -2,7 +2,7 @@ version: 2.1
 executors:
   docker-publisher:
     environment:
-      IMAGE_NAME: contentful/k8s-secret-syncer
+      IMAGE_NAME: contentful/kube-secret-syncer
     machine:
       docker_layer_caching: true
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - run: make docker-build
       - run:
           name: Archive Docker image
-          command: docker save -o image.tar contentful-labs/k8s-secret-syncer
+          command: docker save -o image.tar contentful-labs/kube-secret-syncer
       - persist_to_workspace:
           root: .
           paths:
@@ -41,7 +41,7 @@ jobs:
       - run:
           name: publish docker image with branch
           command: |
-            docker tag contentful-labs/k8s-secret-syncer:latest $IMAGE_NAME:$CIRCLE_BRANCH
+            docker tag contentful-labs/kube-secret-syncer:latest $IMAGE_NAME:$CIRCLE_BRANCH
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
             docker push $IMAGE_NAME:$CIRCLE_BRANCH
   publish-tag:
@@ -55,7 +55,7 @@ jobs:
       - run:
           name: publish docker image with tag
           command: |
-            docker tag contentful-labs/k8s-secret-syncer:latest $IMAGE_NAME:$CIRCLE_TAG
+            docker tag contentful-labs/kube-secret-syncer:latest $IMAGE_NAME:$CIRCLE_TAG
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
             docker push $IMAGE_NAME:$CIRCLE_TAG
   publish-master:
@@ -69,7 +69,7 @@ jobs:
       - run:
           name: publish docker image with latest tag
           command: |
-            docker tag contentful-labs/k8s-secret-syncer:latest $IMAGE_NAME:latest
+            docker tag contentful-labs/kube-secret-syncer:latest $IMAGE_NAME:latest
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
             docker push $IMAGE_NAME:latest
 workflows:

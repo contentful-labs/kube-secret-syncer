@@ -1,6 +1,6 @@
 version: "2"
 domain: contentful.com
-repo: github.com/contentful-labs/k8s-secret-syncer
+repo: github.com/contentful-labs/kube-secret-syncer
 resources:
 - group: secrets
   version: v1
