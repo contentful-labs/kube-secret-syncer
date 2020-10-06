@@ -7,7 +7,7 @@ spec:
   template:
     spec:
       containers:
-      - name: k8s-secret-syncer
+      - name: kube-secret-syncer
         ports:
         - containerPort: 443
           name: webhook-server

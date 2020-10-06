@@ -13,7 +13,7 @@ spec:
         - name: POLL_INTERVAL_SEC
           value: "15"
         image: kube-secret-syncer:kind
-        name: k8s-secret-syncer
+        name: kube-secret-syncer
         envFrom:
         - configMapRef:
             name: aws-creds
