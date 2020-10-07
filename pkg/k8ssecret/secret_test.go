@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/secretsmanager"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/secretsmanager"
 	"reflect"
 	"strings"
 	"testing"
 
-	secretsv1 "github.com/contentful-labs/k8s-secret-syncer/api/v1"
+	secretsv1 "github.com/contentful-labs/kube-secret-syncer/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

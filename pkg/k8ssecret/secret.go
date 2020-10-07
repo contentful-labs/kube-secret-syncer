@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/sprig"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/secretsmanager"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/secretsmanager"
 	"github.com/pkg/errors"
 	"reflect"
 	"text/template"
 
-	secretsv1 "github.com/contentful-labs/k8s-secret-syncer/api/v1"
+	secretsv1 "github.com/contentful-labs/kube-secret-syncer/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -2,8 +2,8 @@ package rolevalidator
 
 import (
 	"encoding/json"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/iam"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/iam"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/k8snamespace"
 	"github.com/pkg/errors"
 )
 

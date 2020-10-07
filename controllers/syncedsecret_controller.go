@@ -35,10 +35,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	secretsv1 "github.com/contentful-labs/k8s-secret-syncer/api/v1"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8ssecret"
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/secretsmanager"
+	secretsv1 "github.com/contentful-labs/kube-secret-syncer/api/v1"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/k8snamespace"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/k8ssecret"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/secretsmanager"
 )
 
 type RoleValidator interface {

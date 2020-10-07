@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       # Expose the prometheus metrics on default port
-      - name: k8s-secret-syncer
+      - name: kube-secret-syncer
         ports:
         - containerPort: 8080
           name: metrics

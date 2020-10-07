@@ -1,7 +1,7 @@
 package rolevalidator
 
 import (
-	"github.com/contentful-labs/k8s-secret-syncer/pkg/k8snamespace"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/k8snamespace"
 	v1 "k8s.io/api/core/v1"
 	"testing"
 )
