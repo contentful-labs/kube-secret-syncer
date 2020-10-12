@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        iam.amazonaws.com/role: "{{ .IAMRoles.K8sSecretSyncer }}"
+        iam.amazonaws.com/role: "kube-secret-syncer-role"
       labels:
     spec:
       containers:
@@ -20,9 +20,9 @@ spec:
         - --enable-leader-election
         env:
         - name: AWS_REGION
-          value: '{{ default "us-east-1" .K8sSecretSyncer.Region }}'
-        image: "contentful/k8s-secret-syncer{{ .K8sSecretSyncer.ImageTag }}"
-        name: k8s-secret-syncer
+          value: 'us-east-1'
+          image: "contentful-labs/kube-secret-syncer:latest"
+        name: kube-secret-syncer
         resources:
           limits:
             cpu: 100m
