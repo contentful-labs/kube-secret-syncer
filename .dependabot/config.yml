@@ -4,7 +4,8 @@ update_configs:
   - package_manager: "go:modules"
     directory: "/"
     update_schedule: "daily"
-    automerged_updates:
-      - match:
-          dependency_type: "all"
-          update_type: "all"
+# Uncomment if we enable auto-merging
+#    automerged_updates:
+#      - match:
+#          dependency_type: "all"
+#          update_type: "all"
