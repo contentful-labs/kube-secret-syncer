@@ -87,6 +87,7 @@ workflows:
               ignore:
                 - master
                 - /pull\/[0-9]+/
+                - /dependabot.*/
       - publish-tag:
           #  Only run this job on git tag pushes
           requires:
