@@ -160,6 +160,58 @@ func TestGenerateSecret(t *testing.T) {
 					"field2": []byte("value2"),
 				},
 			},
+		},{
+			name: "it should support fields with a hardcoded value for Secret Type",
+			have: have{
+				SyncedSecret: secretsv1.SyncedSecret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret-name",
+						Namespace: "secret-namespace",
+					},
+					Spec: secretsv1.SyncedSecretSpec{
+						SecretMetadata: metav1.ObjectMeta{
+							Name:      "secret-name",
+							Namespace: "secret-namespace",
+							Annotations: map[string]string{
+								"randomkey": "random/string",
+							},
+						},
+						Data: []*secretsv1.SecretField{
+							{
+								Name:  _s("foo"),
+								Value: _s("bar"),
+							},
+							{
+								Name:  _s("field2"),
+								Value: _s("value2"),
+							},
+						},
+						IAMRole: _s("iam_role"),
+					},
+					Type: "kubernetes.io/dockerconfigjson",
+				},
+				err:               nil,
+				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
+				secretValueGetter: mockgetSecretValue,
+			},
+			want: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret-name",
+					Namespace: "secret-namespace",
+					Annotations: map[string]string{
+						"randomkey": "random/string",
+					},
+				},
+				Type: "kubernetes.io/dockerconfigjson",
+				Data: map[string][]byte{
+					"foo":    []byte("bar"),
+					"field2": []byte("value2"),
+				},
+			},
 		},
 		{
 			name: "it should support references to a single field in an AWS Secret",

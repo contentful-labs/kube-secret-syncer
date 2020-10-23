@@ -17,6 +17,7 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -104,6 +105,8 @@ type SyncedSecret struct {
 
 	Spec   SyncedSecretSpec   `json:"spec,omitempty"`
 	Status SyncedSecretStatus `json:"status,omitempty"`
+
+	Type corev1.SecretType `json:"type,omitempty"`
 }
 
 // +kubebuilder:object:root=true
