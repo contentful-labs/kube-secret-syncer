@@ -160,7 +160,7 @@ func TestGenerateSecret(t *testing.T) {
 					"field2": []byte("value2"),
 				},
 			},
-		},{
+		}, {
 			name: "it should support fields with a hardcoded value for Secret Type",
 			have: have{
 				SyncedSecret: secretsv1.SyncedSecret{

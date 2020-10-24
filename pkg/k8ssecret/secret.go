@@ -153,7 +153,6 @@ func GenerateK8SSecret(
 		}
 	}
 
-
 	secretType := corev1.SecretTypeOpaque
 	if cs.Type != "" {
 		secretType = cs.Type
