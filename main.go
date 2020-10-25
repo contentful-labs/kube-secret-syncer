@@ -153,8 +153,7 @@ func realMain() int {
 		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
-	stackTraceLevel := uzap.NewAtomicLevelAt(zapcore.PanicLevel)
-	ctrl.SetLogger(zap.New(zap.Encoder(zapcore.NewJSONEncoder(logCfg)), zap.StacktraceLevel(&stackTraceLevel)))
+	logger := zap.New(zap.Encoder(zapcore.NewJSONEncoder(logCfg)), zap.StacktraceLevel(uzap.PanicLevel))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
@@ -162,6 +161,7 @@ func realMain() int {
 		LeaderElection:     true,
 		LeaderElectionID:   "5a48bfe8.contentful.com",
 		SyncPeriod:         &syncPeriod,
+		Logger:             logger,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -185,7 +185,7 @@ func realMain() int {
 	r := &controllers.SyncedSecretReconciler{
 		Client:        mgr.GetClient(),
 		Ctx:           ctx,
-		Log:           ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
+		Log:           logger.WithName("controllers").WithName("SyncedSecret"),
 		Sess:          session.New(Retry5Cfg),
 		GetSMClient:   smsvcfactory.getSMSVC,
 		RoleValidator: roleValidator,
