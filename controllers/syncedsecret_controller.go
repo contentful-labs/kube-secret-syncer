@@ -18,10 +18,11 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -104,7 +105,7 @@ func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{}, errors.WithMessagef(err, "failed verifying role %s: %s", *cs.Spec.IAMRole, err)
 	}
 
-	var k8sSecret corev1.Secret
+	var k8sSecret corev1.Secret = corev1.Secret{}
 	err = r.Get(r.Ctx, K8SSecretName, &k8sSecret)
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
@@ -153,10 +154,8 @@ func (r *SyncedSecretReconciler) templateSecretGetter(secretID string, IAMRole s
 
 // createSecret creates a k8s Secret from a SyncedSecret
 func (r *SyncedSecretReconciler) createK8SSecret(ctx context.Context, cs *secretsv1.SyncedSecret) (*corev1.Secret, error) {
-	var secret *corev1.Secret
-	var err error
 
-	secret, err = k8ssecret.GenerateK8SSecret(*cs, r.poller.PolledSecrets, r.templateSecretGetter, secretsmanager.FilterByTagKey)
+	secret, err := k8ssecret.GenerateK8SSecret(*cs, r.poller.PolledSecrets, r.templateSecretGetter, secretsmanager.FilterByTagKey)
 	if err != nil {
 		return nil, err
 	}
