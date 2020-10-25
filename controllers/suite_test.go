@@ -17,15 +17,16 @@ package controllers
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
-	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -166,6 +167,7 @@ var _ = BeforeSuite(func(done Done) {
 	Retry5Cfg := request.WithRetryer(aws.NewConfig(), awsclient.DefaultRetryer{NumMaxRetries: 5})
 	err = (&SyncedSecretReconciler{
 		Client: k8sManager.GetClient(),
+		Ctx:    context.Background(),
 		Log:    ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
 		Sess:   session.New(Retry5Cfg),
 		GetSMClient: func(IAMRole string) (secretsmanageriface.SecretsManagerAPI, error) {
