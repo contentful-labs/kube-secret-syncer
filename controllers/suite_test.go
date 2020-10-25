@@ -206,4 +206,5 @@ var _ = AfterSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	os.Unsetenv("POLL_INTERVAL_SEC")
+	os.Unsetenv("SYNC_INTERVAL_SEC")
 })

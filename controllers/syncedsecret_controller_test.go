@@ -19,6 +19,7 @@ import (
 var _ = Describe("SyncedSecret Controller", func() {
 	const timeout = time.Minute * 3
 	const interval = time.Second * 2
+	resourceVersion := ""
 
 	BeforeEach(func() {
 	})
@@ -36,7 +37,6 @@ var _ = Describe("SyncedSecret Controller", func() {
 			Namespace: TEST_NAMESPACE,
 		}
 
-		resourceVersion := ""
 		It("Should Create K8S Secrets for SyncedSecret CRD", func() {
 			toCreate := &secretsv1.SyncedSecret{
 				ObjectMeta: metav1.ObjectMeta{
