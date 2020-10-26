@@ -154,8 +154,8 @@ func GenerateK8SSecret(
 	}
 
 	secretType := corev1.SecretTypeOpaque
-	if cs.Type != "" {
-		secretType = cs.Type
+	if cs.Spec.Type != "" {
+		secretType = cs.Spec.Type
 	}
 
 	secret := &corev1.Secret{

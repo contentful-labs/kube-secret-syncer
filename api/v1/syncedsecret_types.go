@@ -81,6 +81,10 @@ type SyncedSecretSpec struct {
 	// DataFrom
 	// +optional
 	DataFrom *DataFrom `json:"dataFrom,omitempty"`
+
+	// Type
+	// +optional
+	Type corev1.SecretType `json:"type,omitempty"`
 }
 
 // SyncedSecretStatus defines the observed state of SyncedSecret
@@ -105,8 +109,6 @@ type SyncedSecret struct {
 
 	Spec   SyncedSecretSpec   `json:"spec,omitempty"`
 	Status SyncedSecretStatus `json:"status,omitempty"`
-
-	Type corev1.SecretType `json:"type,omitempty"`
 }
 
 // +kubebuilder:object:root=true

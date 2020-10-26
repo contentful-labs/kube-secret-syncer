@@ -160,7 +160,8 @@ func TestGenerateSecret(t *testing.T) {
 					"field2": []byte("value2"),
 				},
 			},
-		}, {
+		},
+		{
 			name: "it should support fields with a hardcoded value for Secret Type",
 			have: have{
 				SyncedSecret: secretsv1.SyncedSecret{
@@ -187,8 +188,8 @@ func TestGenerateSecret(t *testing.T) {
 							},
 						},
 						IAMRole: _s("iam_role"),
+						Type:    "kubernetes.io/dockerconfigjson",
 					},
-					Type: "kubernetes.io/dockerconfigjson",
 				},
 				err:               nil,
 				cachedSecrets:     secretsmanager.Secrets{"cachedSecret1": {}, "cachedSecret2": {}},
