@@ -253,7 +253,6 @@ func TestPoll(t *testing.T) {
 		have mockWorkingThenFailingSecretsManagerClient
 		want Secrets
 	}{
-
 		{
 			name: "test 2",
 			have: mockWorkingThenFailingSecretsManagerClient{
@@ -273,6 +272,40 @@ func TestPoll(t *testing.T) {
 							SecretVersionsToStages: map[string][]*string{
 								"randomuuid_hidden": {
 									_s("AWSPREVIOUS"),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: Secrets{
+				"random/aws/secret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+				},
+			},
+		},
+		{
+			name: "test 3",
+			have: mockWorkingThenFailingSecretsManagerClient{
+				Resp: secretsmanager.ListSecretsOutput{
+					SecretList: []*secretsmanager.SecretListEntry{
+						{
+							Name:            _s("random/aws/secret"),
+							LastChangedDate: _t(now.AddDate(0, 0, -2)),
+							SecretVersionsToStages: map[string][]*string{
+								"randomuuid": {
+									_s("AWSCURRENT"),
+								},
+							},
+						}, {
+							Name:            _s("random/aws/deletedsecret"),
+							LastChangedDate: _t(now.AddDate(0, 0, -2)),
+							DeletedDate:     _t(now.AddDate(0, 0, -1)),
+							SecretVersionsToStages: map[string][]*string{
+								"randomuuid": {
+									_s("AWSCURRENT"),
 								},
 							},
 						},

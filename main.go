@@ -195,7 +195,7 @@ func realMain() int {
 	// Introduce artificial startup delay so that all controllers do not start
 	// polling SecretsManager at the same time
 	r1 := rand.New(rand.NewSource(time.Now().UnixNano()))
-	initialDelayS := time.Duration(r1.Intn(int(pollInterval / time.Second))) * time.Second
+	initialDelayS := time.Duration(r1.Intn(int(pollInterval/time.Second))) * time.Second
 	time.Sleep(initialDelayS)
 
 	if err = r.SetupWithManager(mgr); err != nil {
