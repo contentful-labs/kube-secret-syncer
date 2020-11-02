@@ -118,6 +118,10 @@ func (p *Poller) fetchSecrets() (Secrets, error) {
 	}
 
 	for _, secret := range allSecrets {
+		if secret.DeletedDate != nil {
+			continue
+		}
+
 		versionID, err := getCurrentVersion(secret.SecretVersionsToStages)
 		if err != nil {
 			continue
