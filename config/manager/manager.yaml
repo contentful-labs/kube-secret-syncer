@@ -21,7 +21,7 @@ spec:
         env:
         - name: AWS_REGION
           value: 'us-east-1'
-          image: "contentful-labs/kube-secret-syncer:latest"
+        image: "contentful-labs/kube-secret-syncer:latest"
         name: kube-secret-syncer
         resources:
           limits:

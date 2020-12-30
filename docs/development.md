@@ -18,7 +18,12 @@ To develop locally you'll need a kubernetes cluster installed. *kind* can setup 
 After you have *kind* installed, follow the *kind*
 [Creating a Cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#creating-a-cluster) and
 [Interacting With Your Cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#interacting-with-your-cluster)
-instructions to get setup with a working local cluster.
+instructions to get setup with a working local cluster. Be sure to set the environment variable
+`KIND_CTX` to the context created by kind, for example:
+
+```
+export KIND_CTX=kind-kind
+```
 
 You should now be able to run `make docker-build kind` and have the controller run in your local cluster. The
 namespace and CRD for use with kind is available in
