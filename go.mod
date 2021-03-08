@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
-	github.com/onsi/ginkgo v1.14.2
+	github.com/onsi/ginkgo v1.15.1
 	github.com/onsi/gomega v1.10.5
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.9.0
