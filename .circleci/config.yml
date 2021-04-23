@@ -13,11 +13,6 @@ jobs:
     steps:
       - checkout
       - run: make docker-test
-      - run:
-          name: Report code coverage
-          command: |
-            bash <(curl -s https://codecov.io/bash)
-          when: on_success
   build:
     executor: docker-publisher
     steps:
