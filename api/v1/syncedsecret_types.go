@@ -16,6 +16,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,6 +81,10 @@ type SyncedSecretSpec struct {
 	// DataFrom
 	// +optional
 	DataFrom *DataFrom `json:"dataFrom,omitempty"`
+
+	// Type
+	// +optional
+	Type corev1.SecretType `json:"type,omitempty"`
 }
 
 // SyncedSecretStatus defines the observed state of SyncedSecret
