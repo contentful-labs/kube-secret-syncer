@@ -175,4 +175,4 @@ Please refer to the [local development documentation](docs/development.md).
 
 ## Examples
 
-See [sample configurations](config/samples).
+See [sample configurations](config/samples) and [deployment example](examples).
