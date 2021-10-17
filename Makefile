@@ -1,4 +1,4 @@
-
+.PHONY: examples
 # Image URL to use all building/pushing image targets
 IMG ?= contentful-labs/kube-secret-syncer
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -93,3 +93,7 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+examples:
+	@rm -rf examples/*
+	@kustomize build config/overlays/examples/ -o examples/
