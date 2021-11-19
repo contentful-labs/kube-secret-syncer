@@ -153,13 +153,18 @@ func GenerateK8SSecret(
 		}
 	}
 
+	secretType := corev1.SecretTypeOpaque
+	if cs.Spec.Type != "" {
+		secretType = cs.Spec.Type
+	}
+
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: secretMeta,
-		Type:       "Opaque",
+		Type:       secretType,
 		Data:       data,
 	}
 
