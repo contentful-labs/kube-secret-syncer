@@ -173,11 +173,11 @@ func (r *SyncedSecretReconciler) updateK8SSecret(ctx context.Context, cs *secret
 
 	secret, err = k8ssecret.GenerateK8SSecret(*cs, r.poller.PolledSecrets, r.templateSecretGetter, secretsmanager.FilterByTagKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessagef(err, "failed fetching secret from AWS")
 	}
 
 	if err = r.Update(ctx, secret); err != nil {
-		return nil, err
+		return nil, errors.WithMessagef(err, "failed updating k8s secret resource")
 	}
 
 	return secret, nil
