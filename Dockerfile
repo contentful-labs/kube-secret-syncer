@@ -1,5 +1,7 @@
 # Build the manager binary
-FROM golang:1.14 as base
+FROM golang:1.19 as base
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -18,9 +20,8 @@ COPY pkg/ pkg/
 # Test image
 FROM base as test
 
-RUN curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | \
-  tar -xz -C /tmp/ && \
-  mv /tmp/kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder 
+RUN curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v3.9.0/kubebuilder_linux_amd64 -o /usr/local/kubebuilder && \
+  chmod +x /usr/local/kubebuilder
 
 COPY Makefile Makefile
 COPY hack/ hack/
@@ -31,11 +32,17 @@ ENV PATH=$PATH:/usr/local/kubebuilder/bin
 FROM base as builder
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+# the GOARCH has not a default value to allow the binary be built according to the host where the command
+# was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
+# the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
+# by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:latest
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
+USER 65532:65532
+
 ENTRYPOINT ["/manager"]
