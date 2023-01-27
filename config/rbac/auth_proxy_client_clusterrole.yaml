@@ -3,22 +3,14 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: proxy-role
+    app.kubernetes.io/instance: metrics-reader
     app.kubernetes.io/component: kube-rbac-proxy
     app.kubernetes.io/created-by: kube-secret-syncer
     app.kubernetes.io/part-of: kube-secret-syncer
     app.kubernetes.io/managed-by: kustomize
-  name: proxy-role
+  name: metrics-reader
 rules:
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
+- nonResourceURLs:
+  - "/metrics"
   verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
+  - get

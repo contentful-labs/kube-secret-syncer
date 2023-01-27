@@ -1,4 +1,2 @@
 resources:
 - manager.yaml
-commonLabels:
-  app: kube-secret-syncer
