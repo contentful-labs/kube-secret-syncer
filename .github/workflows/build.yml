@@ -27,18 +27,18 @@ jobs:
 
       - name: publish-latest
         run: |
-          docker tag contentful-labs/kube-sercret-syncer:latest ghcr.io/contentful-labs/kube-sercret-syncer:latest
-          docker push ghcr.io/contentful-labs/kube-sercret-syncer:latest
+          docker tag contentful-labs/kube-secret-syncer:latest ghcr.io/contentful-labs/kube-secret-syncer:latest
+          docker push ghcr.io/contentful-labs/kube-secret-syncer:latest
         if: github.ref == 'refs/heads/master'
 
       - name: publish-branch
         run: |
-          docker tag contentful-labs/kube-sercret-syncer:latest ghcr.io/contentful-labs/kube-sercret-syncer:${GITHUB_REF##*/}
-          docker push ghcr.io/contentful-labs/kube-sercret-syncer:${GITHUB_REF##*/}
+          docker tag contentful-labs/kube-secret-syncer:latest ghcr.io/contentful-labs/kube-secret-syncer:${GITHUB_REF##*/}
+          docker push ghcr.io/contentful-labs/kube-secret-syncer:${GITHUB_REF##*/}
         if: startsWith(github.ref, 'refs/heads/') && github.ref != 'refs/heads/master'
 
       - name: publish-tag
         run: |
-          docker tag contentful-labs/kube-sercret-syncer:latest ghcr.io/contentful-labs/kube-sercret-syncer:${GITHUB_REF##*/}
-          docker push ghcr.io/contentful-labs/kube-sercret-syncer:${GITHUB_REF##*/}
+          docker tag contentful-labs/kube-secret-syncer:latest ghcr.io/contentful-labs/kube-secret-syncer:${GITHUB_REF##*/}
+          docker push ghcr.io/contentful-labs/kube-secret-syncer:${GITHUB_REF##*/}
         if: startsWith(github.ref, 'refs/tags/v')
