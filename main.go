@@ -123,6 +123,9 @@ func realMain() int {
 		metricsAddr = ":8080"
 	}
 
+	// empty string default is what we want
+	defaultSearchRole := os.Getenv("POLL_DEFAULT_SEARCH_ROLE")
+
 	annotationName := os.Getenv("NS_ANNOTATION")
 	if annotationName == "" {
 		annotationName = "iam.amazonaws.com/allowed-roles"
@@ -183,13 +186,14 @@ func realMain() int {
 	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache, annotationName)
 
 	r := &controllers.SyncedSecretReconciler{
-		Client:        mgr.GetClient(),
-		Ctx:           ctx,
-		Log:           logger.WithName("controllers").WithName("SyncedSecret"),
-		Sess:          session.New(Retry5Cfg),
-		GetSMClient:   smsvcfactory.getSMSVC,
-		RoleValidator: roleValidator,
-		PollInterval:  pollInterval,
+		Client:            mgr.GetClient(),
+		Ctx:               ctx,
+		Log:               logger.WithName("controllers").WithName("SyncedSecret"),
+		Sess:              session.New(Retry5Cfg),
+		GetSMClient:       smsvcfactory.getSMSVC,
+		DefaultSearchRole: defaultSearchRole,
+		RoleValidator:     roleValidator,
+		PollInterval:      pollInterval,
 	}
 
 	// Introduce artificial startup delay so that all controllers do not start

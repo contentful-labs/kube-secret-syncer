@@ -59,6 +59,8 @@ type SyncedSecretReconciler struct {
 	Log           logr.Logger
 	wg            sync.WaitGroup
 
+	DefaultSearchRole string
+
 	gauges     map[string]prometheus.Gauge
 	sync_state map[string]bool
 }
@@ -227,7 +229,7 @@ func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		metrics.Registry.MustRegister(metric)
 	}
 
-	if r.poller, err = secretsmanager.New(r.PollInterval, errs, r.GetSMClient); err != nil {
+	if r.poller, err = secretsmanager.New(r.PollInterval, errs, r.GetSMClient, r.DefaultSearchRole); err != nil {
 		return err
 	}
 

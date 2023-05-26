@@ -1,9 +1,10 @@
 package secretsmanager
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"sync"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
@@ -18,8 +19,9 @@ type SecretGetter interface {
 type Secrets map[string]PolledSecretMeta
 
 type Poller struct {
-	PolledSecrets Secrets
-	getSMClient   func(string) (secretsmanageriface.SecretsManagerAPI, error)
+	PolledSecrets     Secrets
+	getSMClient       func(string) (secretsmanageriface.SecretsManagerAPI, error)
+	defaultSearchRole string
 
 	smLastPolledOn           time.Time
 	cachedSecretValuesByRole *lru.TwoQueueCache
@@ -36,11 +38,12 @@ type PolledSecretMeta struct {
 }
 
 // New creates a new poller, will send polling or other non critical errors through the errs channel
-func New(interval time.Duration, errs chan error, getSMClient func(string) (secretsmanageriface.SecretsManagerAPI, error)) (*Poller, error) {
+func New(interval time.Duration, errs chan error, getSMClient func(string) (secretsmanageriface.SecretsManagerAPI, error), defaultSearchRole string) (*Poller, error) {
 	p := &Poller{
-		errs:        errs,
-		getSMClient: getSMClient,
-		quit:        make(chan bool),
+		errs:              errs,
+		getSMClient:       getSMClient,
+		quit:              make(chan bool),
+		defaultSearchRole: defaultSearchRole,
 	}
 	var err error
 
@@ -100,7 +103,7 @@ func (p *Poller) fetchSecrets() (Secrets, error) {
 		MaxResults: aws.Int64(100),
 	}
 
-	smClient, err := p.getSMClient("")
+	smClient, err := p.getSMClient(p.defaultSearchRole)
 	if err != nil {
 		return nil, err
 	}
