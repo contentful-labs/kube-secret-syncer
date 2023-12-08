@@ -99,8 +99,10 @@ func (p *Poller) fetchSecrets() (Secrets, error) {
 	fetchedSecrets := make(Secrets)
 
 	allSecrets := []*secretsmanager.SecretListEntry{}
+	includePlannedDeletion := true
 	input := &secretsmanager.ListSecretsInput{
-		MaxResults: aws.Int64(100),
+		MaxResults:             aws.Int64(100),
+		IncludePlannedDeletion: &includePlannedDeletion,
 	}
 
 	smClient, err := p.getSMClient(p.defaultSearchRole)
