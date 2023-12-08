@@ -84,7 +84,7 @@ func TestFetchSecret(t *testing.T) {
 		want Secrets
 	}{
 		{
-			name: "test 1",
+			name: "two current secrets",
 			have: mockSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -126,7 +126,7 @@ func TestFetchSecret(t *testing.T) {
 				},
 			},
 		}, {
-			name: "test 2",
+			name: "one outdated secret, one current",
 			have: mockSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -159,7 +159,7 @@ func TestFetchSecret(t *testing.T) {
 				},
 			},
 		}, {
-			name: "test 3",
+			name: "only one outdated secret",
 			have: mockSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -176,6 +176,46 @@ func TestFetchSecret(t *testing.T) {
 				},
 			},
 			want: Secrets{},
+		}, {
+			name: "one current secret, one deleted",
+			have: mockSecretsManagerClient{
+				Resp: secretsmanager.ListSecretsOutput{
+					SecretList: []*secretsmanager.SecretListEntry{
+						{
+							Name:            _s("random/aws/secret"),
+							LastChangedDate: _t(now.AddDate(0, 0, -2)),
+							SecretVersionsToStages: map[string][]*string{
+								"randomuuid": {
+									_s("AWSCURRENT"),
+								},
+							},
+						}, {
+							Name:            _s("random/aws/secretdeleted"),
+							LastChangedDate: _t(now.AddDate(0, 0, -2)),
+							SecretVersionsToStages: map[string][]*string{
+								"randomuuid_deleted": {
+									_s("AWSCURRENT"),
+								},
+							},
+							DeletedDate: _t(now.AddDate(0, 0, -1)),
+						},
+					},
+				},
+			},
+			want: Secrets{
+				"random/aws/secret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secretdeleted": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_deleted",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          true,
+				},
+			},
 		},
 	} {
 		p := Poller{
@@ -257,7 +297,7 @@ func TestPoll(t *testing.T) {
 		want Secrets
 	}{
 		{
-			name: "test 2",
+			name: "one current secret, one outdated",
 			have: mockWorkingThenFailingSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -291,7 +331,7 @@ func TestPoll(t *testing.T) {
 			},
 		},
 		{
-			name: "test 3",
+			name: "one current secret, one deleted",
 			have: mockWorkingThenFailingSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -322,6 +362,12 @@ func TestPoll(t *testing.T) {
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
 					Deleted:          false,
+				},
+				"random/aws/deletedsecret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          true,
 				},
 			},
 		},
