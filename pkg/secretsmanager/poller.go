@@ -86,13 +86,24 @@ func (p *Poller) poll(ticker *time.Ticker) {
 			if err != nil {
 				p.errs <- errors.WithMessagef(err, "failed polling secrets")
 			} else {
-				p.PolledSecrets = polledSecrets
+				p.updatePolledSecrets(&polledSecrets)
 			}
 
 		case <-p.quit:
 			close(p.errs)
 			return
 		}
+	}
+}
+
+func (p *Poller) updatePolledSecrets(fetchedSecrets *Secrets) {
+	if p.PolledSecrets == nil {
+		p.PolledSecrets = *fetchedSecrets
+		return
+	}
+
+	for name, fetchedSecret := range *fetchedSecrets {
+		p.PolledSecrets[name] = fetchedSecret
 	}
 }
 
