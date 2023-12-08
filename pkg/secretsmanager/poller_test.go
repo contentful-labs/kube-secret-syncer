@@ -188,7 +188,7 @@ func TestFetchSecret(t *testing.T) {
 			t.Errorf("test %s returned error %s", test.name, err)
 		}
 		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("test %s, wanted %s got %s", test.name, test.want, got)
+			t.Errorf("test %s, wanted %v got %v", test.name, test.want, got)
 		}
 	}
 }
@@ -227,7 +227,7 @@ func TestFetchSecretError(t *testing.T) {
 			t.Errorf("test %s should have returned an error, did not", test.name)
 		}
 		if got != nil {
-			t.Errorf("test %s, wanted %s got %s", test.name, test.want, got)
+			t.Errorf("test %s, wanted %v got %v", test.name, test.want, got)
 		}
 	}
 }
