@@ -33,6 +33,7 @@ func TestFetchCurrentSecret(t *testing.T) {
 						"cf/secret/test": PolledSecretMeta{
 							CurrentVersionID: "present",
 							UpdatedAt:        time.Now().AddDate(0, 0, -2),
+							Deleted:          false,
 						},
 					},
 				},
@@ -58,6 +59,7 @@ func TestFetchCurrentSecret(t *testing.T) {
 						"cf/secret/test": PolledSecretMeta{
 							CurrentVersionID: "present",
 							UpdatedAt:        time.Now().AddDate(0, 0, -2),
+							Deleted:          false,
 						},
 					},
 				},
@@ -82,6 +84,32 @@ func TestFetchCurrentSecret(t *testing.T) {
 			have: Have{
 				poller: &Poller{
 					PolledSecrets: Secrets{},
+				},
+				secretID: "cf/secret/test",
+				lruElements: map[string]map[string]secretsmanager.GetSecretValueOutput{
+					"cf/secret/test": {
+						"": {
+							VersionId: _s("present"),
+						},
+					},
+				},
+			},
+			want: Want{
+				resp:  nil,
+				found: false,
+			},
+		},
+		{
+			name: "when the secret is deleted",
+			have: Have{
+				poller: &Poller{
+					PolledSecrets: Secrets{
+						"cf/secret/test": PolledSecretMeta{
+							CurrentVersionID: "present",
+							UpdatedAt:        time.Now().AddDate(0, 0, -2),
+							Deleted:          true,
+						},
+					},
 				},
 				secretID: "cf/secret/test",
 				lruElements: map[string]map[string]secretsmanager.GetSecretValueOutput{
