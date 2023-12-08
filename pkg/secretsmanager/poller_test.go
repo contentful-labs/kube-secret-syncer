@@ -363,12 +363,6 @@ func TestPoll(t *testing.T) {
 					Tags:             map[string]string{},
 					Deleted:          false,
 				},
-				"random/aws/deletedsecret": PolledSecretMeta{
-					CurrentVersionID: "randomuuid",
-					UpdatedAt:        now.AddDate(0, 0, -2),
-					Tags:             map[string]string{},
-					Deleted:          true,
-				},
 			},
 		},
 	} {
@@ -408,5 +402,290 @@ func TestPoll(t *testing.T) {
 		if len(p.PolledSecrets) != len(test.want) {
 			t.Errorf("failing to list secrets seems to have removed the list of PolledSecrets")
 		}
+	}
+}
+
+func TestUpdatePolledSecrets(t *testing.T) {
+
+	now := time.Now()
+
+	for _, test := range []struct {
+		name    string
+		poller  Poller
+		fetched Secrets
+		want    Secrets
+	}{
+		{name: "empty list is populated",
+			poller: Poller{
+				PolledSecrets: make(Secrets),
+			},
+			fetched: Secrets{
+				"random/aws/secret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "no diff means no new elements",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "changing valaues updated",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "new list added",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid_other",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "deleted secret removed",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid_other",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          true,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+	} {
+		test.poller.updatePolledSecrets(&test.fetched)
+
+		if !reflect.DeepEqual(test.want, test.poller.PolledSecrets) {
+			t.Errorf("test %s, wanted %v got %v", test.name, test.want, test.poller.PolledSecrets)
+		}
+
 	}
 }

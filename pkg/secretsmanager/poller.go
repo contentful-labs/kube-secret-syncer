@@ -103,7 +103,11 @@ func (p *Poller) updatePolledSecrets(fetchedSecrets *Secrets) {
 	}
 
 	for name, fetchedSecret := range *fetchedSecrets {
-		p.PolledSecrets[name] = fetchedSecret
+		if fetchedSecret.Deleted {
+			delete(p.PolledSecrets, name)
+		} else {
+			p.PolledSecrets[name] = fetchedSecret
+		}
 	}
 }
 

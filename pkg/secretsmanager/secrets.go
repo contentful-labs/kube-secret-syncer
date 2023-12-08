@@ -58,7 +58,7 @@ func (p *Poller) fetchCurrentSecretCache(secretID *string, role string) (*secret
 		secretValuesByRole := cachedElem.(map[string]secretsmanager.GetSecretValueOutput)
 		if secretValueOut, ok := secretValuesByRole[role]; ok {
 			polledSecretMeta, found := p.PolledSecrets[*secretID]
-			if found && !polledSecretMeta.Deleted && polledSecretMeta.CurrentVersionID == *secretValueOut.VersionId {
+			if found && polledSecretMeta.CurrentVersionID == *secretValueOut.VersionId {
 				return &secretValueOut, found
 			}
 		}

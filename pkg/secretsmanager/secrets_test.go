@@ -99,32 +99,6 @@ func TestFetchCurrentSecret(t *testing.T) {
 				found: false,
 			},
 		},
-		{
-			name: "when the secret is deleted",
-			have: Have{
-				poller: &Poller{
-					PolledSecrets: Secrets{
-						"cf/secret/test": PolledSecretMeta{
-							CurrentVersionID: "present",
-							UpdatedAt:        time.Now().AddDate(0, 0, -2),
-							Deleted:          true,
-						},
-					},
-				},
-				secretID: "cf/secret/test",
-				lruElements: map[string]map[string]secretsmanager.GetSecretValueOutput{
-					"cf/secret/test": {
-						"": {
-							VersionId: _s("present"),
-						},
-					},
-				},
-			},
-			want: Want{
-				resp:  nil,
-				found: false,
-			},
-		},
 	} {
 		test.have.poller.cachedSecretValuesByRole, _ = lru.New2Q(10)
 		for k, v := range test.have.lruElements {
