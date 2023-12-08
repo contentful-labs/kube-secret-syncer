@@ -116,11 +116,13 @@ func TestFetchSecret(t *testing.T) {
 					CurrentVersionID: "002",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 				"random/aws/secret003": PolledSecretMeta{
 					CurrentVersionID: "005",
 					UpdatedAt:        now.AddDate(0, 0, -3),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		}, {
@@ -153,6 +155,7 @@ func TestFetchSecret(t *testing.T) {
 					CurrentVersionID: "randomuuid",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		}, {
@@ -283,6 +286,7 @@ func TestPoll(t *testing.T) {
 					CurrentVersionID: "randomuuid",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		},
@@ -317,6 +321,7 @@ func TestPoll(t *testing.T) {
 					CurrentVersionID: "randomuuid",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		},

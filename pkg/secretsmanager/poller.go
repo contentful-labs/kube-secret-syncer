@@ -35,6 +35,7 @@ type PolledSecretMeta struct {
 	Tags             map[string]string
 	CurrentVersionID string
 	UpdatedAt        time.Time
+	Deleted          bool
 }
 
 // New creates a new poller, will send polling or other non critical errors through the errs channel
@@ -123,10 +124,6 @@ func (p *Poller) fetchSecrets() (Secrets, error) {
 	}
 
 	for _, secret := range allSecrets {
-		if secret.DeletedDate != nil {
-			continue
-		}
-
 		versionID, err := getCurrentVersion(secret.SecretVersionsToStages)
 		if err != nil {
 			continue
@@ -141,6 +138,7 @@ func (p *Poller) fetchSecrets() (Secrets, error) {
 			Tags:             secretTags,
 			CurrentVersionID: versionID,
 			UpdatedAt:        *secret.LastChangedDate,
+			Deleted:          secret.DeletedDate != nil,
 		}
 	}
 
