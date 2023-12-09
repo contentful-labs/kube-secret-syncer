@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
+	testr "github.com/go-logr/logr/testr"
 )
 
 func TestGetCurrentVersion(t *testing.T) {
@@ -179,6 +180,7 @@ func TestFetchSecret(t *testing.T) {
 			getSMClient: func(string) (secretsmanageriface.SecretsManagerAPI, error) {
 				return &test.have, nil
 			},
+			Log: testr.New(t),
 		}
 		got, err := p.fetchSecrets()
 		if err != nil {
@@ -328,6 +330,7 @@ func TestPoll(t *testing.T) {
 			},
 			errs: errs,
 			quit: make(chan bool),
+			Log:  testr.New(t),
 		}
 
 		go func() {

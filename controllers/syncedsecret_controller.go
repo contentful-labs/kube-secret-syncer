@@ -228,7 +228,7 @@ func (r *SyncedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		metrics.Registry.MustRegister(metric)
 	}
 
-	if r.poller, err = secretsmanager.New(r.PollInterval, errs, r.GetSMClient, r.DefaultSearchRole); err != nil {
+	if r.poller, err = secretsmanager.New(r.PollInterval, errs, r.GetSMClient, r.DefaultSearchRole, r.Log); err != nil {
 		return err
 	}
 
