@@ -75,7 +75,7 @@ const (
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 
-func (r *SyncedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var err error
 	var cs secretsv1.SyncedSecret
 
