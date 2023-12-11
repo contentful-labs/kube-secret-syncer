@@ -3,6 +3,7 @@ package secretsmanager
 import (
 	"errors"
 	"fmt"
+	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
 	"time"
@@ -10,6 +11,31 @@ import (
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/secretsmanager/secretsmanageriface"
 )
+
+type MockedLogger struct {
+}
+
+func (m MockedLogger) Info(msg string, keysAndValues ...interface{}) {
+}
+
+func (m MockedLogger) Enabled() bool {
+	return true
+}
+
+func (m MockedLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+}
+
+func (m MockedLogger) V(level int) logr.InfoLogger {
+	return MockedLogger{}
+}
+
+func (m MockedLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
+	return MockedLogger{}
+}
+
+func (m MockedLogger) WithName(name string) logr.Logger {
+	return MockedLogger{}
+}
 
 func TestGetCurrentVersion(t *testing.T) {
 	currV := "AWSCURRENT"
@@ -179,6 +205,7 @@ func TestFetchSecret(t *testing.T) {
 			getSMClient: func(string) (secretsmanageriface.SecretsManagerAPI, error) {
 				return &test.have, nil
 			},
+			Log: MockedLogger{},
 		}
 		got, err := p.fetchSecrets()
 		if err != nil {
@@ -218,6 +245,7 @@ func TestFetchSecretError(t *testing.T) {
 			getSMClient: func(string) (secretsmanageriface.SecretsManagerAPI, error) {
 				return &test.have, nil
 			},
+			Log: MockedLogger{},
 		}
 		got, err := p.fetchSecrets()
 		if err == nil {
@@ -328,6 +356,7 @@ func TestPoll(t *testing.T) {
 			},
 			errs: errs,
 			quit: make(chan bool),
+			Log:  MockedLogger{},
 		}
 
 		go func() {
