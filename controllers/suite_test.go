@@ -167,7 +167,6 @@ var _ = BeforeSuite(func(done Done) {
 	Retry5Cfg := request.WithRetryer(aws.NewConfig(), awsclient.DefaultRetryer{NumMaxRetries: 5})
 	err = (&SyncedSecretReconciler{
 		Client: k8sManager.GetClient(),
-		Ctx:    context.Background(),
 		Log:    ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
 		Sess:   session.New(Retry5Cfg),
 		GetSMClient: func(IAMRole string) (secretsmanageriface.SecretsManagerAPI, error) {

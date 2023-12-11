@@ -49,7 +49,6 @@ type RoleValidator interface {
 // SyncedSecretReconciler reconciles a SyncedSecret object
 type SyncedSecretReconciler struct {
 	client.Client
-	Ctx           context.Context
 	Sess          *session.Session
 	GetSMClient   func(string) (secretsmanageriface.SecretsManagerAPI, error)
 	poller        *secretsmanager.Poller
@@ -82,7 +81,7 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	defer r.updatePrometheus(r.sync_state)
 
 	log := r.Log.WithValues(LogFieldSyncedSecret, req.NamespacedName.String())
-	if err = r.Get(r.Ctx, req.NamespacedName, &cs); err != nil {
+	if err = r.Get(ctx, req.NamespacedName, &cs); err != nil {
 		log.Info("unable to fetch SyncedSecret, was maybe deleted")
 		return ctrl.Result{}, nil
 	}
@@ -108,7 +107,7 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	var k8sSecret corev1.Secret = corev1.Secret{}
-	err = r.Get(r.Ctx, K8SSecretName, &k8sSecret)
+	err = r.Get(ctx, K8SSecretName, &k8sSecret)
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			r.sync_state[cs.Name] = false
@@ -116,7 +115,7 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 
 		// Create the k8S secret if it was not found
-		createdSecret, err := r.createK8SSecret(r.Ctx, &cs)
+		createdSecret, err := r.createK8SSecret(ctx, &cs)
 		if err != nil {
 			r.sync_state[cs.Name] = false
 			return ctrl.Result{}, errors.WithMessagef(err, "failed creating K8S Secret %s", K8SSecretName)
@@ -124,7 +123,7 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		log.Info("created k8s secret", "K8SSecret", createdSecret)
 	} else {
 		// Update the K8S Secret if it already exists
-		updatedSecret, err := r.updateK8SSecret(r.Ctx, &cs)
+		updatedSecret, err := r.updateK8SSecret(ctx, &cs)
 		if err != nil {
 			r.sync_state[cs.Name] = false
 			return ctrl.Result{}, errors.WithMessagef(err, "failed updating k8s secret %s", K8SSecretName)
@@ -134,7 +133,7 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	if err = r.updateCSStatus(r.Ctx, &cs); err != nil {
+	if err = r.updateCSStatus(ctx, &cs); err != nil {
 		r.sync_state[cs.Name] = false
 		log.Error(err, "failed to update SyncedSecret status")
 		return ctrl.Result{}, errors.WithMessagef(err, "failed to update SyncedSecret status for %s", K8SSecretName)
