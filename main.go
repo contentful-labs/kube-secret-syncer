@@ -187,7 +187,6 @@ func realMain() int {
 
 	r := &controllers.SyncedSecretReconciler{
 		Client:            mgr.GetClient(),
-		Ctx:               ctx,
 		Log:               logger.WithName("controllers").WithName("SyncedSecret"),
 		Sess:              session.New(Retry5Cfg),
 		GetSMClient:       smsvcfactory.getSMSVC,
