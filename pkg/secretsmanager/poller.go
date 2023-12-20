@@ -35,6 +35,7 @@ type PolledSecretMeta struct {
 	Tags             map[string]string
 	CurrentVersionID string
 	UpdatedAt        time.Time
+	Deleted          bool
 }
 
 // New creates a new poller, will send polling or other non critical errors through the errs channel
@@ -85,7 +86,7 @@ func (p *Poller) poll(ticker *time.Ticker) {
 			if err != nil {
 				p.errs <- errors.WithMessagef(err, "failed polling secrets")
 			} else {
-				p.PolledSecrets = polledSecrets
+				p.updatePolledSecrets(&polledSecrets)
 			}
 
 		case <-p.quit:
@@ -95,12 +96,29 @@ func (p *Poller) poll(ticker *time.Ticker) {
 	}
 }
 
+func (p *Poller) updatePolledSecrets(fetchedSecrets *Secrets) {
+	if p.PolledSecrets == nil {
+		p.PolledSecrets = *fetchedSecrets
+		return
+	}
+
+	for name, fetchedSecret := range *fetchedSecrets {
+		if fetchedSecret.Deleted {
+			delete(p.PolledSecrets, name)
+		} else {
+			p.PolledSecrets[name] = fetchedSecret
+		}
+	}
+}
+
 func (p *Poller) fetchSecrets() (Secrets, error) {
 	fetchedSecrets := make(Secrets)
 
 	allSecrets := []*secretsmanager.SecretListEntry{}
+	includePlannedDeletion := true
 	input := &secretsmanager.ListSecretsInput{
-		MaxResults: aws.Int64(100),
+		MaxResults:             aws.Int64(100),
+		IncludePlannedDeletion: &includePlannedDeletion,
 	}
 
 	smClient, err := p.getSMClient(p.defaultSearchRole)
@@ -121,10 +139,6 @@ func (p *Poller) fetchSecrets() (Secrets, error) {
 	}
 
 	for _, secret := range allSecrets {
-		if secret.DeletedDate != nil {
-			continue
-		}
-
 		versionID, err := getCurrentVersion(secret.SecretVersionsToStages)
 		if err != nil {
 			continue
@@ -139,6 +153,7 @@ func (p *Poller) fetchSecrets() (Secrets, error) {
 			Tags:             secretTags,
 			CurrentVersionID: versionID,
 			UpdatedAt:        *secret.LastChangedDate,
+			Deleted:          secret.DeletedDate != nil,
 		}
 	}
 

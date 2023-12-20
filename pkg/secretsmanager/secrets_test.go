@@ -33,6 +33,7 @@ func TestFetchCurrentSecret(t *testing.T) {
 						"cf/secret/test": PolledSecretMeta{
 							CurrentVersionID: "present",
 							UpdatedAt:        time.Now().AddDate(0, 0, -2),
+							Deleted:          false,
 						},
 					},
 				},
@@ -58,6 +59,7 @@ func TestFetchCurrentSecret(t *testing.T) {
 						"cf/secret/test": PolledSecretMeta{
 							CurrentVersionID: "present",
 							UpdatedAt:        time.Now().AddDate(0, 0, -2),
+							Deleted:          false,
 						},
 					},
 				},

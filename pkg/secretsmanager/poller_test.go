@@ -84,7 +84,7 @@ func TestFetchSecret(t *testing.T) {
 		want Secrets
 	}{
 		{
-			name: "test 1",
+			name: "two current secrets",
 			have: mockSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -116,15 +116,17 @@ func TestFetchSecret(t *testing.T) {
 					CurrentVersionID: "002",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 				"random/aws/secret003": PolledSecretMeta{
 					CurrentVersionID: "005",
 					UpdatedAt:        now.AddDate(0, 0, -3),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		}, {
-			name: "test 2",
+			name: "one outdated secret, one current",
 			have: mockSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -153,10 +155,11 @@ func TestFetchSecret(t *testing.T) {
 					CurrentVersionID: "randomuuid",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		}, {
-			name: "test 3",
+			name: "only one outdated secret",
 			have: mockSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -173,6 +176,46 @@ func TestFetchSecret(t *testing.T) {
 				},
 			},
 			want: Secrets{},
+		}, {
+			name: "one current secret, one deleted",
+			have: mockSecretsManagerClient{
+				Resp: secretsmanager.ListSecretsOutput{
+					SecretList: []*secretsmanager.SecretListEntry{
+						{
+							Name:            _s("random/aws/secret"),
+							LastChangedDate: _t(now.AddDate(0, 0, -2)),
+							SecretVersionsToStages: map[string][]*string{
+								"randomuuid": {
+									_s("AWSCURRENT"),
+								},
+							},
+						}, {
+							Name:            _s("random/aws/secretdeleted"),
+							LastChangedDate: _t(now.AddDate(0, 0, -2)),
+							SecretVersionsToStages: map[string][]*string{
+								"randomuuid_deleted": {
+									_s("AWSCURRENT"),
+								},
+							},
+							DeletedDate: _t(now.AddDate(0, 0, -1)),
+						},
+					},
+				},
+			},
+			want: Secrets{
+				"random/aws/secret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secretdeleted": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_deleted",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          true,
+				},
+			},
 		},
 	} {
 		p := Poller{
@@ -185,7 +228,7 @@ func TestFetchSecret(t *testing.T) {
 			t.Errorf("test %s returned error %s", test.name, err)
 		}
 		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("test %s, wanted %s got %s", test.name, test.want, got)
+			t.Errorf("test %s, wanted %v got %v", test.name, test.want, got)
 		}
 	}
 }
@@ -224,7 +267,7 @@ func TestFetchSecretError(t *testing.T) {
 			t.Errorf("test %s should have returned an error, did not", test.name)
 		}
 		if got != nil {
-			t.Errorf("test %s, wanted %s got %s", test.name, test.want, got)
+			t.Errorf("test %s, wanted %v got %v", test.name, test.want, got)
 		}
 	}
 }
@@ -254,7 +297,7 @@ func TestPoll(t *testing.T) {
 		want Secrets
 	}{
 		{
-			name: "test 2",
+			name: "one current secret, one outdated",
 			have: mockWorkingThenFailingSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -283,11 +326,12 @@ func TestPoll(t *testing.T) {
 					CurrentVersionID: "randomuuid",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		},
 		{
-			name: "test 3",
+			name: "one current secret, one deleted",
 			have: mockWorkingThenFailingSecretsManagerClient{
 				Resp: secretsmanager.ListSecretsOutput{
 					SecretList: []*secretsmanager.SecretListEntry{
@@ -317,6 +361,7 @@ func TestPoll(t *testing.T) {
 					CurrentVersionID: "randomuuid",
 					UpdatedAt:        now.AddDate(0, 0, -2),
 					Tags:             map[string]string{},
+					Deleted:          false,
 				},
 			},
 		},
@@ -357,5 +402,290 @@ func TestPoll(t *testing.T) {
 		if len(p.PolledSecrets) != len(test.want) {
 			t.Errorf("failing to list secrets seems to have removed the list of PolledSecrets")
 		}
+	}
+}
+
+func TestUpdatePolledSecrets(t *testing.T) {
+
+	now := time.Now()
+
+	for _, test := range []struct {
+		name    string
+		poller  Poller
+		fetched Secrets
+		want    Secrets
+	}{
+		{name: "empty list is populated",
+			poller: Poller{
+				PolledSecrets: make(Secrets),
+			},
+			fetched: Secrets{
+				"random/aws/secret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "no diff means no new elements",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "changing valaues updated",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "new list added",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid_other",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+		{name: "deleted secret removed",
+			poller: Poller{
+				PolledSecrets: Secrets{
+					"random/aws/secret1": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret2": PolledSecretMeta{
+						CurrentVersionID: "randomuuid",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+					"random/aws/secret3": PolledSecretMeta{
+						CurrentVersionID: "randomuuid_other",
+						UpdatedAt:        now.AddDate(0, 0, -2),
+						Tags:             map[string]string{},
+						Deleted:          false,
+					},
+				},
+			},
+			fetched: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret3": PolledSecretMeta{
+					CurrentVersionID: "randomuuid_other",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          true,
+				},
+			},
+			want: Secrets{
+				"random/aws/secret1": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+				"random/aws/secret2": PolledSecretMeta{
+					CurrentVersionID: "randomuuid",
+					UpdatedAt:        now.AddDate(0, 0, -2),
+					Tags:             map[string]string{},
+					Deleted:          false,
+				},
+			},
+		},
+	} {
+		test.poller.updatePolledSecrets(&test.fetched)
+
+		if !reflect.DeepEqual(test.want, test.poller.PolledSecrets) {
+			t.Errorf("test %s, wanted %v got %v", test.name, test.want, test.poller.PolledSecrets)
+		}
+
 	}
 }
