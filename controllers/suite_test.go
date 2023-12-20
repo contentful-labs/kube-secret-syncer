@@ -43,7 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	zap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -105,7 +105,7 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -167,7 +167,6 @@ var _ = BeforeSuite(func(done Done) {
 	Retry5Cfg := request.WithRetryer(aws.NewConfig(), awsclient.DefaultRetryer{NumMaxRetries: 5})
 	err = (&SyncedSecretReconciler{
 		Client: k8sManager.GetClient(),
-		Ctx:    context.Background(),
 		Log:    ctrl.Log.WithName("controllers").WithName("SyncedSecret"),
 		Sess:   session.New(Retry5Cfg),
 		GetSMClient: func(IAMRole string) (secretsmanageriface.SecretsManagerAPI, error) {
