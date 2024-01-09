@@ -164,3 +164,13 @@ func GenerateK8SSecret(
 
 	return secret, nil
 }
+
+func SecretLength(secret *corev1.Secret) int {
+	length := 0
+
+	for _, v := range secret.Data {
+		length += len(v)
+	}
+
+	return length
+}
