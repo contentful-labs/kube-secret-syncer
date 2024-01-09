@@ -129,7 +129,7 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, errors.WithMessagef(err, "failed updating k8s secret %s", K8SSecretName)
 		}
 		if !k8ssecret.K8SSecretsEqual(k8sSecret, *updatedSecret) {
-			log.Info("updated secret", "K8SSecret", updatedSecret.ObjectMeta)
+			log.Info("updated secret", "K8SSecret", updatedSecret.ObjectMeta, "secretSize", len(updatedSecret.Data))
 		}
 	}
 
@@ -165,6 +165,8 @@ func (r *SyncedSecretReconciler) createK8SSecret(ctx context.Context, cs *secret
 		return nil, err
 	}
 
+	r.Log.Info("Created K8S Secret", "K8SSecret", secret.ObjectMeta, "secretSize", len(secret.Data))
+
 	return secret, nil
 }
 
@@ -181,6 +183,7 @@ func (r *SyncedSecretReconciler) updateK8SSecret(ctx context.Context, cs *secret
 		return nil, err
 	}
 
+	r.Log.Info("Updating K8S Secret", "K8SSecret", secret.ObjectMeta, "secretSize", len(secret.Data))
 	return secret, nil
 }
 

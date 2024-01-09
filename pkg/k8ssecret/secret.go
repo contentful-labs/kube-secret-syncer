@@ -152,7 +152,6 @@ func GenerateK8SSecret(
 			}
 		}
 	}
-
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
