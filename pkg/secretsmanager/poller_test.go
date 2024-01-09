@@ -330,7 +330,7 @@ func TestPoll(t *testing.T) {
 			},
 			errs: errs,
 			quit: make(chan bool),
-			Log:  testr.New(t),
+			Log:  testr.NewWithOptions(t, testr.Options{Verbosity: 0}),
 		}
 
 		go func() {

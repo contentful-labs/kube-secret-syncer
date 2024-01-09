@@ -62,7 +62,7 @@ func New(interval time.Duration, errs chan error, getSMClient func(string) (secr
 		return nil, err
 	}
 
-	p.Log.Info("Fetched %d secrets from AWS after starting", len(p.PolledSecrets))
+	p.Log.Info("Fetched secrets from AWS after starting", "numberOfSecrets", len(p.PolledSecrets))
 	go func() {
 		p.wg.Add(1)
 		ticker := time.NewTicker(interval)
@@ -89,7 +89,7 @@ func (p *Poller) poll(ticker *time.Ticker) {
 				p.errs <- errors.WithMessagef(err, "failed polling secrets")
 			} else {
 				p.PolledSecrets = polledSecrets
-				p.Log.Info("Fetched %d secrets from AWS", len(p.PolledSecrets))
+				p.Log.Info("Fetched secrets from AWS", "numberOfSecres", len(p.PolledSecrets))
 			}
 
 		case <-p.quit:
