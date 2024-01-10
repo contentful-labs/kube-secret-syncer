@@ -631,3 +631,42 @@ func TestK8SSecretsEqual(t *testing.T) {
 		}
 	}
 }
+
+func TestSecretlength(t *testing.T) {
+	emptySecret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "testName",
+			Namespace:   "testNamespace",
+			Annotations: make(map[string]string),
+			Labels:      make(map[string]string),
+		},
+		Type: "Opaque",
+		Data: map[string][]byte{},
+	}
+	secret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "testName",
+			Namespace:   "testNamespace",
+			Annotations: make(map[string]string),
+			Labels:      make(map[string]string),
+		},
+		Type: "Opaque",
+		Data: map[string][]byte{"password": []byte("alma")},
+	}
+
+	if SecretLength(&emptySecret) > 0 {
+		t.Errorf("secret length should be 0 but it is not")
+	}
+
+	if SecretLength(&secret) <= SecretLength(&emptySecret) {
+		t.Errorf("longer secrets length should be bigger than empty secrets, but it isn't")
+	}
+}

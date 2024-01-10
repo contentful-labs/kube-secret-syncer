@@ -1,6 +1,7 @@
 package secretsmanager
 
 import (
+	"github.com/go-logr/logr"
 	"sync"
 	"time"
 
@@ -28,6 +29,7 @@ type Poller struct {
 	wg                       sync.WaitGroup
 	errs                     chan<- error
 	quit                     chan bool
+	Log                      logr.Logger
 }
 
 // SecretMeta meta information of a polled secret
@@ -38,15 +40,15 @@ type PolledSecretMeta struct {
 }
 
 // New creates a new poller, will send polling or other non critical errors through the errs channel
-func New(interval time.Duration, errs chan error, getSMClient func(string) (secretsmanageriface.SecretsManagerAPI, error), defaultSearchRole string) (*Poller, error) {
+func New(interval time.Duration, errs chan error, getSMClient func(string) (secretsmanageriface.SecretsManagerAPI, error), defaultSearchRole string, logger logr.Logger) (*Poller, error) {
 	p := &Poller{
 		errs:              errs,
 		getSMClient:       getSMClient,
 		quit:              make(chan bool),
 		defaultSearchRole: defaultSearchRole,
+		Log:               logger,
 	}
 	var err error
-
 	// init a lru cache that can hold 10000 items (arbit value for now)
 	// this doesn't init the size to value set here, but is only used to figure if eviction is required or not
 	p.cachedSecretValuesByRole, err = lru.New2Q(10000)
@@ -60,6 +62,7 @@ func New(interval time.Duration, errs chan error, getSMClient func(string) (secr
 		return nil, err
 	}
 
+	p.Log.Info("Fetched secrets from AWS after starting", "numberOfSecrets", len(p.PolledSecrets))
 	go func() {
 		p.wg.Add(1)
 		ticker := time.NewTicker(interval)
@@ -86,6 +89,7 @@ func (p *Poller) poll(ticker *time.Ticker) {
 				p.errs <- errors.WithMessagef(err, "failed polling secrets")
 			} else {
 				p.PolledSecrets = polledSecrets
+				p.Log.Info("Fetched secrets from AWS", "numberOfSecres", len(p.PolledSecrets))
 			}
 
 		case <-p.quit:
