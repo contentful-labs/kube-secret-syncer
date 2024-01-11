@@ -183,7 +183,6 @@ func (r *SyncedSecretReconciler) updateK8SSecret(ctx context.Context, cs *secret
 		return nil, err
 	}
 
-	r.Log.Info("Updating K8S Secret", "K8SSecret", secret.ObjectMeta, "secretSize", k8ssecret.SecretLength(secret))
 	return secret, nil
 }
 
