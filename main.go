@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/contentful-labs/kube-secret-syncer/pkg/k8snamespace"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/namespacevalidator"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
@@ -183,15 +184,17 @@ func realMain() int {
 	}
 
 	roleValidator := rolevalidator.NewRoleValidator(arnClient, nsCache, annotationName)
+	namespaceValidator := namespacevalidator.NewNamespaceValidator(nsCache)
 
 	r := &controllers.SyncedSecretReconciler{
-		Client:            mgr.GetClient(),
-		Log:               logger.WithName("controllers").WithName("SyncedSecret"),
-		Sess:              session.New(Retry5Cfg),
-		GetSMClient:       smsvcfactory.getSMSVC,
-		DefaultSearchRole: defaultSearchRole,
-		RoleValidator:     roleValidator,
-		PollInterval:      pollInterval,
+		Client:             mgr.GetClient(),
+		Log:                logger.WithName("controllers").WithName("SyncedSecret"),
+		Sess:               session.New(Retry5Cfg),
+		GetSMClient:        smsvcfactory.getSMSVC,
+		DefaultSearchRole:  defaultSearchRole,
+		RoleValidator:      roleValidator,
+		NamespaceValidator: namespaceValidator,
+		PollInterval:       pollInterval,
 	}
 
 	if err = r.SetupWithManager(mgr); err != nil {

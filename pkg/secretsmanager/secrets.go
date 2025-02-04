@@ -66,3 +66,47 @@ func (p *Poller) fetchCurrentSecretCache(secretID *string, role string) (*secret
 
 	return nil, false
 }
+
+func (p *Poller) DescribeSecret(secretID *string, IAMRole string) (secretsmanager.DescribeSecretOutput, error) {
+	if secretValueOut, ok := p.fetchCurrentDescribedSecretCache(secretID, IAMRole); ok {
+		return *secretValueOut, nil
+	}
+
+	smClient, err := p.getSMClient(IAMRole)
+	if err != nil {
+		return secretsmanager.DescribeSecretOutput{}, err
+	}
+
+	// Not in cache, or new versionID found
+	secretValueOut, err := smClient.DescribeSecret(&secretsmanager.DescribeSecretInput{
+		SecretId: secretID,
+	})
+	if err != nil {
+		return secretsmanager.DescribeSecretOutput{}, errors.WithMessagef(err, "can't find AWSCURRENT version for secretID %s", *secretID)
+	}
+
+	if cachedElem, ok := p.cachedSecretsByRole.Get(*secretID); !ok {
+		cachedElem := map[string]secretsmanager.DescribeSecretOutput{
+			IAMRole: *secretValueOut,
+		}
+		p.cachedSecretsByRole.Add(*secretID, cachedElem)
+	} else {
+		cachedElem.(map[string]secretsmanager.DescribeSecretOutput)[IAMRole] = *secretValueOut
+	}
+
+	return *secretValueOut, nil
+}
+
+func (p *Poller) fetchCurrentDescribedSecretCache(secretID *string, role string) (*secretsmanager.DescribeSecretOutput, bool) {
+	if cachedElem, ok := p.cachedSecretsByRole.Get(*secretID); ok {
+		secretsByRole := cachedElem.(map[string]secretsmanager.DescribeSecretOutput)
+		if secretValueOut, ok := secretsByRole[role]; ok {
+			_, found := p.PolledSecrets[*secretID]
+			if found {
+				return &secretValueOut, found
+			}
+		}
+	}
+
+	return nil, false
+}

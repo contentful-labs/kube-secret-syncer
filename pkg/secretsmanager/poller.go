@@ -1,9 +1,10 @@
 package secretsmanager
 
 import (
-	"github.com/go-logr/logr"
 	"sync"
 	"time"
+
+	"github.com/go-logr/logr"
 
 	"github.com/aws/aws-sdk-go/aws"
 
@@ -26,6 +27,7 @@ type Poller struct {
 
 	smLastPolledOn           time.Time
 	cachedSecretValuesByRole *lru.TwoQueueCache
+	cachedSecretsByRole      *lru.TwoQueueCache
 	wg                       sync.WaitGroup
 	errs                     chan<- error
 	quit                     chan bool
@@ -52,6 +54,7 @@ func New(interval time.Duration, errs chan error, getSMClient func(string) (secr
 	// init a lru cache that can hold 10000 items (arbit value for now)
 	// this doesn't init the size to value set here, but is only used to figure if eviction is required or not
 	p.cachedSecretValuesByRole, err = lru.New2Q(10000)
+	p.cachedSecretsByRole, err = lru.New2Q(10000)
 	if err != nil {
 		return nil, err
 	}

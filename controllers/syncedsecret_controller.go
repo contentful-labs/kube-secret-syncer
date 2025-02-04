@@ -36,6 +36,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	awssecretsmanager "github.com/aws/aws-sdk-go/service/secretsmanager"
 	secretsv1 "github.com/contentful-labs/kube-secret-syncer/api/v1"
 	"github.com/contentful-labs/kube-secret-syncer/pkg/k8snamespace"
 	"github.com/contentful-labs/kube-secret-syncer/pkg/k8ssecret"
@@ -46,17 +47,22 @@ type RoleValidator interface {
 	IsWhitelisted(role, namespace string) (bool, error)
 }
 
+type NamespaceValidator interface {
+	HasNamespaceType(secret awssecretsmanager.DescribeSecretOutput, namespace string) (bool, error)
+}
+
 // SyncedSecretReconciler reconciles a SyncedSecret object
 type SyncedSecretReconciler struct {
 	client.Client
-	Sess          *session.Session
-	GetSMClient   func(string) (secretsmanageriface.SecretsManagerAPI, error)
-	poller        *secretsmanager.Poller
-	getNamespace  k8snamespace.NamespaceGetter
-	RoleValidator RoleValidator
-	PollInterval  time.Duration
-	Log           logr.Logger
-	wg            sync.WaitGroup
+	Sess               *session.Session
+	GetSMClient        func(string) (secretsmanageriface.SecretsManagerAPI, error)
+	poller             *secretsmanager.Poller
+	getNamespace       k8snamespace.NamespaceGetter
+	RoleValidator      RoleValidator
+	NamespaceValidator NamespaceValidator
+	PollInterval       time.Duration
+	Log                logr.Logger
+	wg                 sync.WaitGroup
 
 	DefaultSearchRole string
 
@@ -94,16 +100,66 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 	log = log.WithValues(LogFieldK8SSecret, K8SSecretName.String())
 
-	allowed, err := r.RoleValidator.IsWhitelisted(*cs.Spec.IAMRole, cs.Namespace)
-	if !allowed {
-		r.sync_state[cs.Name] = false
-		log.Error(err, "role not allowed by namespace", "role", *cs.Spec.IAMRole, "namespace", cs.Namespace)
-		return ctrl.Result{}, errors.WithMessagef(err, "role %s not allowed in namespace %s", *cs.Spec.IAMRole, cs.Namespace)
-	}
-	if err != nil {
-		r.sync_state[cs.Name] = false
-		log.Error(err, "failed verifying if IAMRole is whitelisted", "role", *cs.Spec.IAMRole, "namespace", cs.Namespace)
-		return ctrl.Result{}, errors.WithMessagef(err, "failed verifying role %s: %s", *cs.Spec.IAMRole, err)
+	if cs.Spec.AWSAccountID != nil {
+		IAMRole := fmt.Sprintf("arn:aws:iam::%s:role/secret-syncer", *cs.Spec.AWSAccountID)
+		if cs.Spec.DataFrom != nil {
+			var secretRef *string // secretID of the secret in secret Manager
+			if cs.Spec.DataFrom.SecretRef != nil {
+				secretRef = cs.Spec.DataFrom.SecretRef.Name
+			}
+			allowed, err := r.secretAllowedInNamespace(*secretRef, IAMRole, cs.Namespace, cs.Name)
+
+			if !allowed {
+				return ctrl.Result{}, errors.WithMessagef(err, "failed to validate if secret %s with role %s is allowed in namespace %s", *secretRef, IAMRole, cs.Namespace)
+			}
+		}
+
+		if cs.Spec.Data != nil {
+			for _, field := range cs.Spec.Data {
+				var secretRef *string // secretID of the secret in secret Manager
+				if field.ValueFrom.SecretRef != nil {
+					secretRef = field.ValueFrom.SecretRef.Name
+				}
+				allowed, err := r.secretAllowedInNamespace(*secretRef, IAMRole, cs.Namespace, cs.Name)
+
+				if !allowed {
+					return ctrl.Result{}, errors.WithMessagef(err, "failed to validate if secret %s with role %s is allowed in namespace %s", *secretRef, IAMRole, cs.Namespace)
+				}
+			}
+		}
+		// // We need to check each secret in Data and DataFrom to see if they are allowed in the namespace
+		// secretID := cs.Spec.DataFrom.SecretRef.Name
+		// //IAMRole := fmt.Sprintf("arn:aws:iam::%s:role/secret-syncer", *cs.Spec.AWSAccountID)
+		// secret, err := r.poller.DescribeSecret(aws.String(*secretID), IAMRole)
+		// if err != nil {
+		// 	log.Error(err, "failed to describe secret", "role", IAMRole, "namespace", cs.Namespace)
+		// 	return ctrl.Result{}, errors.WithMessagef(err, "failed to fetch secret %s with role %s in namespace %s", *secretID, IAMRole, cs.Namespace)
+		// }
+
+		// // TODO: Move this to secretvalidator similar to rolevalidator
+		// allowed, err := r.RoleValidator.HasNamespaceType(secret, cs.Namespace)
+		// if !allowed {
+		// 	r.sync_state[cs.Name] = false
+		// 	log.Error(err, "namespace not allowed in secret", "namespace", cs.Namespace, "secret", secretID)
+		// 	return ctrl.Result{}, errors.WithMessagef(err, "namespace %s not allowed in secret %s", cs.Namespace, *secretID)
+		// }
+		// if err != nil {
+		// 	r.sync_state[cs.Name] = false
+		// 	log.Error(err, "failed verifying if namespace is allowed in secret", "namespace", cs.Namespace, "secret", secretID)
+		// 	return ctrl.Result{}, errors.WithMessagef(err, "failed verifying secret %s: %s", *secretID, err)
+		// }
+	} else {
+		allowed, err := r.RoleValidator.IsWhitelisted(*cs.Spec.IAMRole, cs.Namespace)
+		if !allowed {
+			r.sync_state[cs.Name] = false
+			log.Error(err, "role not allowed by namespace", "role", *cs.Spec.IAMRole, "namespace", cs.Namespace)
+			return ctrl.Result{}, errors.WithMessagef(err, "role %s not allowed in namespace %s", *cs.Spec.IAMRole, cs.Namespace)
+		}
+		if err != nil {
+			r.sync_state[cs.Name] = false
+			log.Error(err, "failed verifying if IAMRole is whitelisted", "role", *cs.Spec.IAMRole, "namespace", cs.Namespace)
+			return ctrl.Result{}, errors.WithMessagef(err, "failed verifying role %s: %s", *cs.Spec.IAMRole, err)
+		}
 	}
 
 	var k8sSecret corev1.Secret = corev1.Secret{}
@@ -142,6 +198,29 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	r.sync_state[cs.Name] = true
 
 	return ctrl.Result{}, nil
+}
+
+func (r *SyncedSecretReconciler) secretAllowedInNamespace(secretID string, IAMRole string, namespace string, name string) (bool, error) {
+	log := r.Log.WithValues(LogFieldSyncedSecret, namespace)
+	secret, err := r.poller.DescribeSecret(aws.String(secretID), IAMRole)
+	if err != nil {
+		log.Error(err, "failed to describe secret", "role", IAMRole, "namespace", namespace)
+		return false, errors.WithMessagef(err, "failed to fetch secret %s with role %s in namespace %s", secretID, IAMRole, namespace)
+	}
+
+	// TODO: Move this to secretvalidator similar to rolevalidator
+	allowed, err := r.NamespaceValidator.HasNamespaceType(secret, namespace)
+	if !allowed {
+		r.sync_state[name] = false
+		log.Error(err, "namespace not allowed in secret", "namespace", namespace, "secret", secretID)
+		return false, errors.WithMessagef(err, "namespace %s not allowed in secret %s", namespace, secretID)
+	}
+	if err != nil {
+		r.sync_state[name] = false
+		log.Error(err, "failed verifying if namespace is allowed in secret", "namespace", namespace, "secret", secretID)
+		return false, errors.WithMessagef(err, "failed verifying secret %s: %s", secretID, err)
+	}
+	return true, nil
 }
 
 func (r *SyncedSecretReconciler) templateSecretGetter(secretID string, IAMRole string) (string, error) {

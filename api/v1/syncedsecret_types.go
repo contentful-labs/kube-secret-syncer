@@ -80,6 +80,10 @@ type SyncedSecretSpec struct {
 	// DataFrom
 	// +optional
 	DataFrom *DataFrom `json:"dataFrom,omitempty"`
+
+	// AWSAccountID
+	// +optional
+	AWSAccountID *string `json:"AWSAccountID,omitempty"`
 }
 
 // SyncedSecretStatus defines the observed state of SyncedSecret
