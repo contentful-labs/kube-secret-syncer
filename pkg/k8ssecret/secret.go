@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/Masterminds/sprig"
-	"github.com/contentful-labs/kube-secret-syncer/pkg/secretsmanager"
-	"github.com/pkg/errors"
 	"reflect"
 	"text/template"
+
+	"github.com/Masterminds/sprig"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/secretsmanager"
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 
 	secretsv1 "github.com/contentful-labs/kube-secret-syncer/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +35,7 @@ func GenerateK8SSecret(
 	secrets secretsmanager.Secrets,
 	secretValueGetter func(string, string) (string, error),
 	secretFilterByTagKey func(secretsmanager.Secrets, string) secretsmanager.Secrets,
+	log logr.Logger,
 ) (*corev1.Secret, error) {
 	annotations := map[string]string{}
 	if cs.Spec.SecretMetadata.Annotations != nil {
@@ -68,7 +71,13 @@ func GenerateK8SSecret(
 		}
 
 		if secretRef != nil {
-			AWSSecretValue, err := secretValueGetter(*secretRef, *cs.Spec.IAMRole)
+			var iamrole string
+			if cs.Spec.AWSAccountID != nil {
+				iamrole = fmt.Sprintf("arn:aws:iam::%s:role/secret-syncer", *cs.Spec.AWSAccountID)
+			} else {
+				iamrole = *cs.Spec.IAMRole
+			}
+			AWSSecretValue, err := secretValueGetter(*secretRef, iamrole)
 			if err != nil {
 				return nil, err
 			}
