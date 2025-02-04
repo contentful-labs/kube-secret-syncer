@@ -216,7 +216,7 @@ func (r *SyncedSecretReconciler) templateSecretGetter(secretID string, IAMRole s
 // createSecret creates a k8s Secret from a SyncedSecret
 func (r *SyncedSecretReconciler) createK8SSecret(ctx context.Context, cs *secretsv1.SyncedSecret) (*corev1.Secret, error) {
 
-	secret, err := k8ssecret.GenerateK8SSecret(*cs, r.poller.PolledSecrets, r.templateSecretGetter, secretsmanager.FilterByTagKey)
+	secret, err := k8ssecret.GenerateK8SSecret(*cs, r.poller.PolledSecrets, r.templateSecretGetter, secretsmanager.FilterByTagKey, r.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (r *SyncedSecretReconciler) updateK8SSecret(ctx context.Context, cs *secret
 	var secret *corev1.Secret
 	var err error
 
-	secret, err = k8ssecret.GenerateK8SSecret(*cs, r.poller.PolledSecrets, r.templateSecretGetter, secretsmanager.FilterByTagKey)
+	secret, err = k8ssecret.GenerateK8SSecret(*cs, r.poller.PolledSecrets, r.templateSecretGetter, secretsmanager.FilterByTagKey, r.Log)
 	if err != nil {
 		return nil, err
 	}
