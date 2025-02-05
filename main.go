@@ -42,7 +42,9 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -159,12 +161,16 @@ func realMain() int {
 	logger := zap.New(zap.Encoder(zapcore.NewJSONEncoder(logCfg)), zap.StacktraceLevel(uzap.PanicLevel))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     true,
-		LeaderElectionID:   "5a48bfe8.contentful.com",
-		SyncPeriod:         &syncPeriod,
-		Logger:             logger,
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
+		LeaderElection:   true,
+		LeaderElectionID: "5a48bfe8.contentful.com",
+		Cache: cache.Options{
+			SyncPeriod: &syncPeriod,
+		},
+		Logger: logger,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

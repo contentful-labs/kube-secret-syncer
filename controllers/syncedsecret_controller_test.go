@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"reflect"
 	"time"
+
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -214,5 +215,70 @@ var _ = Describe("SyncedSecret Controller", func() {
 				return reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)
 			}, timeout, interval).Should(BeTrue())
 		})
+
+		// It("Should Create K8S Secrets for SyncedSecret CRD with AWSAccountID", func() {
+		// toCreate := &secretsv1.SyncedSecret{
+		// 	ObjectMeta: metav1.ObjectMeta{
+		// 		Name:            secretKey.Name,
+		// 		Namespace:       secretKey.Namespace,
+		// 		ResourceVersion: resourceVersion,
+		// 	},
+		// 	Spec: secretsv1.SyncedSecretSpec{
+		// 		SecretMetadata: metav1.ObjectMeta{
+		// 			Name:      secretKey.Name,
+		// 			Namespace: secretKey.Namespace,
+		// 		},
+		// 		AWSAccountID: _s("12345678910"),
+		// 		Data: []*secretsv1.SecretField{
+		// 			{
+		// 				Name: _s("DB_NAME"),
+		// 				ValueFrom: &secretsv1.ValueFrom{
+		// 					SecretKeyRef: &secretsv1.SecretKeyRef{
+		// 						Name: _s("random/aws/secret003"),
+		// 						Key:  _s("database_name"),
+		// 					},
+		// 				},
+		// 			},
+		// 			{
+		// 				Name: _s("DB_PASS"),
+		// 				ValueFrom: &secretsv1.ValueFrom{
+		// 					SecretKeyRef: &secretsv1.SecretKeyRef{
+		// 						Name: _s("random/aws/secret003"),
+		// 						Key:  _s("database_pass"),
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// }
+		// secretExpect := &corev1.Secret{
+		// 	ObjectMeta: metav1.ObjectMeta{
+		// 		Name:      secretKey.Name,
+		// 		Namespace: secretKey.Namespace,
+		// 	},
+		// 	Type: "Opaque",
+		// 	Data: map[string][]byte{
+		// 		"DB_NAME": []byte("secretDB"),
+		// 		"DB_PASS": []byte("cupofcoffee"),
+		// 	},
+		// }
+		// Expect(k8sClient.Create(context.Background(), toCreate)).Should(Succeed())
+
+		// fetchedSecret := &corev1.Secret{}
+		// Eventually(func() bool {
+		// 	err := k8sClient.Get(context.Background(), secretKey, fetchedSecret)
+		// 	return k8serrors.IsNotFound(err)
+		// }, timeout, interval).Should(BeFalse())
+
+		// // we need to ensure that that secretExpect.Data is a subset of fetchedSecret.Data
+		// // the kubernetes client.go doesn't base64 values this is something that kubectl maybe does
+		// Expect(reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)).To(BeTrue())
+
+		// fetchedCfSecret := &secretsv1.SyncedSecret{}
+		// err := k8sClient.Get(context.Background(), secretKey, fetchedCfSecret)
+		// Expect(err).ToNot(HaveOccurred())
+		// resourceVersion = fetchedCfSecret.ResourceVersion
+
+		//})
 	})
 })

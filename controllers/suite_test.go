@@ -39,6 +39,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -124,8 +125,9 @@ var _ = BeforeSuite(func(done Done) {
 
 	syncPeriod := 2 * time.Second
 	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:     scheme.Scheme,
-		SyncPeriod: &syncPeriod,
+		Scheme: scheme.Scheme,
+		Cache:  cache.Options{SyncPeriod: &syncPeriod},
+		// SyncPeriod: &syncPeriod,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sManager).ToNot(BeNil())
