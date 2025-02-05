@@ -26,7 +26,6 @@ import (
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -99,9 +98,10 @@ func (m *mockSecretsManagerClient) GetSecretValue(*secretsmanager.GetSecretValue
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
+	// This is deprecated, we need to replace it: https://onsi.github.io/ginkgo/MIGRATING_TO_V2#migration-strategy-2
 	RunSpecsWithDefaultAndCustomReporters(t,
 		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+		[]Reporter{})
 }
 
 var _ = BeforeSuite(func(done Done) {
