@@ -217,11 +217,12 @@ var _ = Describe("SyncedSecret Controller", func() {
 		})
 
 		// TODO do a test for DataFrom as well
+		// TODO do a test for update secret with new way
 
 		It("Should Create K8S Secrets for SyncedSecret CRD with AWSAccountID", func() {
 			secretKey := types.NamespacedName{
 				Name:      "another-secret-name",
-				Namespace: TEST_NAMESPACE,
+				Namespace: TEST_NAMESPACE2,
 			}
 
 			resourceVersion := ""
@@ -243,7 +244,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 							Name: _s("DB_NAME"),
 							ValueFrom: &secretsv1.ValueFrom{
 								SecretKeyRef: &secretsv1.SecretKeyRef{
-									Name: _s("random/aws/secret003"),
+									Name: _s("random/aws/secret004"),
 									Key:  _s("database_name"),
 								},
 							},
@@ -252,7 +253,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 							Name: _s("DB_PASS"),
 							ValueFrom: &secretsv1.ValueFrom{
 								SecretKeyRef: &secretsv1.SecretKeyRef{
-									Name: _s("random/aws/secret003"),
+									Name: _s("random/aws/secret004"),
 									Key:  _s("database_pass"),
 								},
 							},
