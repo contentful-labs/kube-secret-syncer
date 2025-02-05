@@ -102,33 +102,42 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	if cs.Spec.AWSAccountID != nil {
 		IAMRole := fmt.Sprintf("arn:aws:iam::%s:role/secret-syncer", *cs.Spec.AWSAccountID)
+		var secretRef *string // secretID of the secret in secret Manager
 
 		// We need to check each secret in Data and DataFrom to see if they are allowed in the namespace
 		if cs.Spec.DataFrom != nil {
-			var secretRef *string // secretID of the secret in secret Manager
 			if cs.Spec.DataFrom.SecretRef != nil {
 				secretRef = cs.Spec.DataFrom.SecretRef.Name
-			}
-			allowed, err := r.secretAllowedInNamespace(*secretRef, IAMRole, cs.Namespace, cs.Name)
+				if secretRef == nil {
+					return ctrl.Result{}, errors.WithMessagef(err, "secretRef name is invalid %s", *secretRef)
+				}
 
-			if !allowed {
-				return ctrl.Result{}, errors.WithMessagef(err, "failed to validate if secret %s with role %s is allowed in namespace %s", *secretRef, IAMRole, cs.Namespace)
+				allowed, err := r.secretAllowedInNamespace(*secretRef, IAMRole, cs.Namespace, cs.Name)
+
+				if !allowed || err != nil {
+					return ctrl.Result{}, errors.WithMessagef(err, "failed to validate if secret %s with role %s is allowed in namespace %s", *secretRef, IAMRole, cs.Namespace)
+				}
 			}
+
 		}
 
 		if cs.Spec.Data != nil {
 			for _, field := range cs.Spec.Data {
-				var secretRef *string // secretID of the secret in secret Manager
 				if field.ValueFrom.SecretRef != nil {
-					secretRef = field.ValueFrom.SecretRef.Name
-				}
-				allowed, err := r.secretAllowedInNamespace(*secretRef, IAMRole, cs.Namespace, cs.Name)
+					secretRef = field.ValueFrom.SecretKeyRef.Name
+					if secretRef == nil {
+						return ctrl.Result{}, errors.WithMessagef(err, "secretRef name is invalid %s", *secretRef)
+					}
 
-				if !allowed {
-					return ctrl.Result{}, errors.WithMessagef(err, "failed to validate if secret %s with role %s is allowed in namespace %s", *secretRef, IAMRole, cs.Namespace)
+					allowed, err := r.secretAllowedInNamespace(*secretRef, IAMRole, cs.Namespace, cs.Name)
+
+					if !allowed || err != nil {
+						return ctrl.Result{}, errors.WithMessagef(err, "failed to validate if secret %s with role %s is allowed in namespace %s", *secretRef, IAMRole, cs.Namespace)
+					}
 				}
 			}
 		}
+
 	} else {
 		allowed, err := r.RoleValidator.IsWhitelisted(*cs.Spec.IAMRole, cs.Namespace)
 		if !allowed {
@@ -183,7 +192,9 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 func (r *SyncedSecretReconciler) secretAllowedInNamespace(secretID string, IAMRole string, namespace string, name string) (bool, error) {
 	log := r.Log.WithValues(LogFieldSyncedSecret, namespace)
+	log.Info("BEFOREEEEEEEE-----DescribeSecret--secretID", secretID, IAMRole)
 	secret, err := r.poller.DescribeSecret(aws.String(secretID), IAMRole)
+	log.Info("AFTERRRRRRRRR-----DescribeSecret--secretID", secretID, IAMRole)
 	if err != nil {
 		log.Error(err, "failed to describe secret", "role", IAMRole, "namespace", namespace)
 		return false, errors.WithMessagef(err, "failed to fetch secret %s with role %s in namespace %s", secretID, IAMRole, namespace)

@@ -216,8 +216,9 @@ var _ = Describe("SyncedSecret Controller", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should Create K8S Secrets for SyncedSecret CRD with AWSAccountID", func() {
+		// TODO do a test for DataFrom as well
 
+		It("Should Create K8S Secrets for SyncedSecret CRD with AWSAccountID", func() {
 			secretKey := types.NamespacedName{
 				Name:      "another-secret-name",
 				Namespace: TEST_NAMESPACE,
