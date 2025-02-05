@@ -64,8 +64,9 @@ var Secretsoutput *secretsmanager.ListSecretsOutput
 var MockSecretsOutput = mockSecretsOutput{}
 
 type mockSecretsOutput struct {
-	SecretsPageOutput  *secretsmanager.ListSecretsOutput
-	SecretsValueOutput *secretsmanager.GetSecretValueOutput
+	SecretsPageOutput    *secretsmanager.ListSecretsOutput
+	SecretsValueOutput   *secretsmanager.GetSecretValueOutput
+	DescribeSecretOutput *secretsmanager.DescribeSecretOutput
 }
 
 type mockSecretsManagerClient struct {
@@ -80,9 +81,22 @@ func _t(A time.Time) *time.Time {
 	return &A
 }
 
+func keyValue(key, value string) *secretsmanager.Tag {
+	return &secretsmanager.Tag{
+		Key:   aws.String(key),
+		Value: aws.String(value),
+	}
+}
+
 type mockRoleValidator struct{}
 
 func (m *mockRoleValidator) IsWhitelisted(string, string) (bool, error) {
+	return true, nil
+}
+
+type mockNamespaceValidator struct{}
+
+func (m *mockNamespaceValidator) HasNamespaceType(secretsmanager.DescribeSecretOutput, string) (bool, error) {
 	return true, nil
 }
 
@@ -94,6 +108,10 @@ func (m *mockSecretsManagerClient) ListSecretsPages(input *secretsmanager.ListSe
 
 func (m *mockSecretsManagerClient) GetSecretValue(*secretsmanager.GetSecretValueInput) (*secretsmanager.GetSecretValueOutput, error) {
 	return MockSecretsOutput.SecretsValueOutput, nil
+}
+
+func (m *mockSecretsManagerClient) DescribeSecret(*secretsmanager.DescribeSecretInput) (*secretsmanager.DescribeSecretOutput, error) {
+	return MockSecretsOutput.DescribeSecretOutput, nil
 }
 
 func TestAPIs(t *testing.T) {
@@ -165,6 +183,13 @@ var _ = BeforeSuite(func(done Done) {
 		VersionId:    _s(`005`),
 	}
 
+	MockSecretsOutput.DescribeSecretOutput = &secretsmanager.DescribeSecretOutput{
+		ARN: _s("arn:aws:secretsmanager:us-west-2:123456789012:secret:random/aws/secret003-abc"),
+		Tags: []*secretsmanager.Tag{
+			keyValue("k8s.contentful.com/namespace_type/secret-sync-test", "1"),
+		},
+	}
+
 	// mock the manager setup
 	Retry5Cfg := request.WithRetryer(aws.NewConfig(), awsclient.DefaultRetryer{NumMaxRetries: 5})
 	err = (&SyncedSecretReconciler{
@@ -174,10 +199,11 @@ var _ = BeforeSuite(func(done Done) {
 		GetSMClient: func(IAMRole string) (secretsmanageriface.SecretsManagerAPI, error) {
 			return &smSvc, nil
 		},
-		RoleValidator: &mockRoleValidator{},
-		gauges:        map[string]prometheus.Gauge{},
-		sync_state:    map[string]bool{},
-		PollInterval:  3 * time.Second,
+		RoleValidator:      &mockRoleValidator{},
+		NamespaceValidator: &mockNamespaceValidator{},
+		gauges:             map[string]prometheus.Gauge{},
+		sync_state:         map[string]bool{},
+		PollInterval:       3 * time.Second,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
