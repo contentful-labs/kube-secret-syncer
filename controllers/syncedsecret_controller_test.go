@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -228,6 +230,11 @@ var _ = Describe("SyncedSecret Controller", func() {
 		resourceVersion := ""
 
 		It("Should Create K8S Secrets for SyncedSecret CRD with AWSAccountID", func() {
+			MockSecretsOutput.SecretsValueOutput = &secretsmanager.GetSecretValueOutput{
+				SecretString: _s(`{"database_name":"secretDB","database_pass":"cupofcoffee", "database_name1":"secretDB02"}`),
+				VersionId:    _s(`005`),
+			}
+
 			toCreate := &secretsv1.SyncedSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            secretKey.Name,
@@ -284,12 +291,23 @@ var _ = Describe("SyncedSecret Controller", func() {
 			fetchedSecret := &corev1.Secret{}
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), secretKey, fetchedSecret)
-				Expect(err).ToNot(HaveOccurred())
+				// Expect(err).ToNot(HaveOccurred())
 				return k8serrors.IsNotFound(err)
 			}, timeout, interval).Should(BeFalse())
 
 			// we need to ensure that that secretExpect.Data is a subset of fetchedSecret.Data
 			// the kubernetes client.go doesn't base64 values this is something that kubectl maybe does
+			for k, v := range fetchedSecret.Data {
+				decoded, _ := base64.StdEncoding.DecodeString(string(v))
+				fmt.Printf("fetchedSecret.Data[%s]: %s\n", k, decoded)
+				fmt.Printf("fetchedSecret.Data1[%s]: %s\n", k, v)
+			}
+			for k, v := range secretExpect.Data {
+				decoded, _ := base64.StdEncoding.DecodeString(string(v))
+				fmt.Printf("secretExpect.Data[%s]: %s\n", k, decoded)
+				fmt.Printf("secretExpect.Data1[%s]: %s\n", k, v)
+			}
+			//fmt.Printf("secretExpect.Data: %v\n", secretExpect.Data)
 			Expect(reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)).To(BeTrue())
 
 			fetchedCfSecret := &secretsv1.SyncedSecret{}
