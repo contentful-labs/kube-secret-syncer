@@ -215,17 +215,19 @@ var _ = Describe("SyncedSecret Controller", func() {
 				return reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)
 			}, timeout, interval).Should(BeTrue())
 		})
+	})
 
+	Context("For a single SyncedSecret", func() {
 		// TODO do a test for DataFrom as well
 		// TODO do a test for update secret with new way
+		secretKey := types.NamespacedName{
+			Name:      "another-secret-name",
+			Namespace: TEST_NAMESPACE2,
+		}
+
+		resourceVersion := ""
 
 		It("Should Create K8S Secrets for SyncedSecret CRD with AWSAccountID", func() {
-			secretKey := types.NamespacedName{
-				Name:      "another-secret-name",
-				Namespace: TEST_NAMESPACE2,
-			}
-
-			resourceVersion := ""
 			toCreate := &secretsv1.SyncedSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            secretKey.Name,
@@ -272,11 +274,17 @@ var _ = Describe("SyncedSecret Controller", func() {
 					"DB_PASS": []byte("cupofcoffee"),
 				},
 			}
-			Expect(k8sClient.Create(context.Background(), toCreate)).Should(Succeed())
+			// Expect(k8sClient.Create(context.Background(), toCreate)).Should(Succeed())
+			err := k8sClient.Create(context.Background(), toCreate)
+			Expect(err).ToNot(HaveOccurred())
+			// Expect(func() bool {
+			// 	return true
+			// }).Should(Succeed())
 
 			fetchedSecret := &corev1.Secret{}
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), secretKey, fetchedSecret)
+				Expect(err).ToNot(HaveOccurred())
 				return k8serrors.IsNotFound(err)
 			}, timeout, interval).Should(BeFalse())
 
@@ -285,7 +293,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 			Expect(reflect.DeepEqual(fetchedSecret.Data, secretExpect.Data)).To(BeTrue())
 
 			fetchedCfSecret := &secretsv1.SyncedSecret{}
-			err := k8sClient.Get(context.Background(), secretKey, fetchedCfSecret)
+			err = k8sClient.Get(context.Background(), secretKey, fetchedCfSecret)
 			Expect(err).ToNot(HaveOccurred())
 			resourceVersion = fetchedCfSecret.ResourceVersion
 
