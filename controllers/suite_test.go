@@ -57,6 +57,7 @@ var testEnv *envtest.Environment
 
 const TEST_NAMESPACE = "secret-sync-test"
 const TEST_NAMESPACE2 = "secret-sync-test2"
+const TEST_NAMESPACE3 = "secret-sync-test3"
 
 var time_now = time.Now()
 
@@ -186,6 +187,17 @@ var _ = BeforeSuite(func(done Done) {
 						_s("AWSPREVIOUS"),
 					},
 				},
+			}, {
+				Name:            _s("random/aws/secret005"),
+				LastChangedDate: _t(time_now.AddDate(0, 0, -3)),
+				SecretVersionsToStages: map[string][]*string{
+					"006": {
+						_s("AWSCURRENT"),
+					},
+					"005": {
+						_s("AWSPREVIOUS"),
+					},
+				},
 			},
 		},
 	}
@@ -199,6 +211,7 @@ var _ = BeforeSuite(func(done Done) {
 		ARN: _s("arn:aws:secretsmanager:us-west-2:123456789012:secret:random/aws/secret003-abc"),
 		Tags: []*secretsmanager.Tag{
 			keyValue("k8s.contentful.com/namespace_type/secret-sync-test2", "1"),
+			keyValue("k8s.contentful.com/namespace_type/secret-sync-test3", "1"),
 		},
 	}
 
@@ -239,9 +252,18 @@ var _ = BeforeSuite(func(done Done) {
 			Name: TEST_NAMESPACE2,
 		},
 	}
+	toCreate3 := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: TEST_NAMESPACE3,
+		},
+	}
 
 	err = k8sClient.Create(context.Background(), toCreate)
+	Expect(err).To(BeNil())
 	err = k8sClient.Create(context.Background(), toCreate2)
+	Expect(err).To(BeNil())
+	err = k8sClient.Create(context.Background(), toCreate3)
+	Expect(err).To(BeNil())
 	Expect(err).To(BeNil())
 
 	close(done)

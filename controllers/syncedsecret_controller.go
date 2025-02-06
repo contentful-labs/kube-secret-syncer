@@ -192,15 +192,12 @@ func (r *SyncedSecretReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 func (r *SyncedSecretReconciler) secretAllowedInNamespace(secretID string, IAMRole string, namespace string, name string) (bool, error) {
 	log := r.Log.WithValues(LogFieldSyncedSecret, namespace)
-	log.Info("BEFOREEEEEEEE-----DescribeSecret--secretID", secretID, IAMRole)
 	secret, err := r.poller.DescribeSecret(aws.String(secretID), IAMRole)
-	log.Info("AFTERRRRRRRRR-----DescribeSecret--secretID", secretID, IAMRole)
 	if err != nil {
 		log.Error(err, "failed to describe secret", "role", IAMRole, "namespace", namespace)
 		return false, errors.WithMessagef(err, "failed to fetch secret %s with role %s in namespace %s", secretID, IAMRole, namespace)
 	}
 
-	// TODO: Move this to secretvalidator similar to rolevalidator
 	allowed, err := r.NamespaceValidator.HasNamespaceType(secret, namespace)
 	if !allowed {
 		r.sync_state[name] = false
