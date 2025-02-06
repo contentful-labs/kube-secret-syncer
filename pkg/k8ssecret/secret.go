@@ -93,6 +93,12 @@ func GenerateK8SSecret(
 	}
 
 	if cs.Spec.Data != nil {
+		var iamrole string
+		if cs.Spec.AWSAccountID != nil {
+			iamrole = fmt.Sprintf("arn:aws:iam::%s:role/secret-syncer", *cs.Spec.AWSAccountID)
+		} else {
+			iamrole = *cs.Spec.IAMRole
+		}
 		for _, field := range cs.Spec.Data {
 			if field.Value != nil {
 				data[*field.Name] = []byte(*field.Value)
@@ -100,7 +106,7 @@ func GenerateK8SSecret(
 
 			if field.ValueFrom != nil {
 				if field.ValueFrom.SecretRef != nil {
-					AWSSecretValue, err := secretValueGetter(*field.ValueFrom.SecretRef.Name, *cs.Spec.IAMRole)
+					AWSSecretValue, err := secretValueGetter(*field.ValueFrom.SecretRef.Name, iamrole)
 					if err != nil {
 						return nil, err
 					}
@@ -108,7 +114,7 @@ func GenerateK8SSecret(
 				}
 
 				if field.ValueFrom.SecretKeyRef != nil {
-					AWSSecretValue, err := secretValueGetter(*field.ValueFrom.SecretKeyRef.Name, *cs.Spec.IAMRole)
+					AWSSecretValue, err := secretValueGetter(*field.ValueFrom.SecretKeyRef.Name, iamrole)
 					if err != nil {
 						return nil, err
 					}
@@ -123,10 +129,10 @@ func GenerateK8SSecret(
 					tpl := template.New(cs.Name)
 					tpl = tpl.Funcs(template.FuncMap{
 						"getSecretValue": func(secretID string) (string, error) {
-							return secretValueGetter(secretID, *cs.Spec.IAMRole)
+							return secretValueGetter(secretID, iamrole)
 						},
 						"getSecretValueMap": func(secretID string) (map[string]interface{}, error) {
-							raw, err := secretValueGetter(secretID, *cs.Spec.IAMRole)
+							raw, err := secretValueGetter(secretID, iamrole)
 							if err != nil {
 								return nil, fmt.Errorf("failed retrieving value for secret %s", secretID)
 							}
