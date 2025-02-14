@@ -90,7 +90,7 @@ func (c *NamespaceCache) Get(name string) (*v1.Namespace, error) {
 type namespaceLogger struct {
 }
 
-func (o *namespaceLogger) OnAdd(obj interface{}) {
+func (o *namespaceLogger) OnAdd(obj interface{}, isInInitialList bool) {
 }
 
 func (o *namespaceLogger) OnDelete(obj interface{}) {

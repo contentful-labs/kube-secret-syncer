@@ -3,11 +3,13 @@ package k8ssecret
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/contentful-labs/kube-secret-syncer/pkg/secretsmanager"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/contentful-labs/kube-secret-syncer/pkg/secretsmanager"
+	"github.com/go-logr/logr"
 
 	secretsv1 "github.com/contentful-labs/kube-secret-syncer/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -576,7 +578,7 @@ func TestGenerateSecret(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		k8sSecret, err := GenerateK8SSecret(test.have.SyncedSecret, test.have.cachedSecrets, test.have.secretValueGetter, secretsmanager.FilterByTagKey)
+		k8sSecret, err := GenerateK8SSecret(test.have.SyncedSecret, test.have.cachedSecrets, test.have.secretValueGetter, secretsmanager.FilterByTagKey, logr.Logger{})
 		if !reflect.DeepEqual(k8sSecret, test.want) {
 			if k8sSecret != nil && k8sSecret.Data != nil {
 				for k, v := range k8sSecret.Data {

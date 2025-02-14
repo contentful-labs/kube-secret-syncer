@@ -26,7 +26,6 @@ import (
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,6 +39,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -56,6 +56,8 @@ var k8sManager ctrl.Manager
 var testEnv *envtest.Environment
 
 const TEST_NAMESPACE = "secret-sync-test"
+const TEST_NAMESPACE2 = "secret-sync-test2"
+const TEST_NAMESPACE3 = "secret-sync-test3"
 
 var time_now = time.Now()
 
@@ -64,8 +66,9 @@ var Secretsoutput *secretsmanager.ListSecretsOutput
 var MockSecretsOutput = mockSecretsOutput{}
 
 type mockSecretsOutput struct {
-	SecretsPageOutput  *secretsmanager.ListSecretsOutput
-	SecretsValueOutput *secretsmanager.GetSecretValueOutput
+	SecretsPageOutput    *secretsmanager.ListSecretsOutput
+	SecretsValueOutput   *secretsmanager.GetSecretValueOutput
+	DescribeSecretOutput *secretsmanager.DescribeSecretOutput
 }
 
 type mockSecretsManagerClient struct {
@@ -80,9 +83,22 @@ func _t(A time.Time) *time.Time {
 	return &A
 }
 
+func keyValue(key, value string) *secretsmanager.Tag {
+	return &secretsmanager.Tag{
+		Key:   aws.String(key),
+		Value: aws.String(value),
+	}
+}
+
 type mockRoleValidator struct{}
 
 func (m *mockRoleValidator) IsWhitelisted(string, string) (bool, error) {
+	return true, nil
+}
+
+type mockNamespaceValidator struct{}
+
+func (m *mockNamespaceValidator) HasNamespaceType(secretsmanager.DescribeSecretOutput, string) (bool, error) {
 	return true, nil
 }
 
@@ -96,12 +112,17 @@ func (m *mockSecretsManagerClient) GetSecretValue(*secretsmanager.GetSecretValue
 	return MockSecretsOutput.SecretsValueOutput, nil
 }
 
+func (m *mockSecretsManagerClient) DescribeSecret(*secretsmanager.DescribeSecretInput) (*secretsmanager.DescribeSecretOutput, error) {
+	return MockSecretsOutput.DescribeSecretOutput, nil
+}
+
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
+	// This is deprecated, we need to replace it: https://onsi.github.io/ginkgo/MIGRATING_TO_V2#migration-strategy-2
 	RunSpecsWithDefaultAndCustomReporters(t,
 		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+		[]Reporter{})
 }
 
 var _ = BeforeSuite(func(done Done) {
@@ -124,8 +145,9 @@ var _ = BeforeSuite(func(done Done) {
 
 	syncPeriod := 2 * time.Second
 	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:     scheme.Scheme,
-		SyncPeriod: &syncPeriod,
+		Scheme: scheme.Scheme,
+		Cache:  cache.Options{SyncPeriod: &syncPeriod},
+		// SyncPeriod: &syncPeriod,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sManager).ToNot(BeNil())
@@ -154,6 +176,28 @@ var _ = BeforeSuite(func(done Done) {
 						_s("AWSPREVIOUS"),
 					},
 				},
+			}, {
+				Name:            _s("random/aws/secret004"),
+				LastChangedDate: _t(time_now.AddDate(0, 0, -3)),
+				SecretVersionsToStages: map[string][]*string{
+					"005": {
+						_s("AWSCURRENT"),
+					},
+					"004": {
+						_s("AWSPREVIOUS"),
+					},
+				},
+			}, {
+				Name:            _s("random/aws/secret005"),
+				LastChangedDate: _t(time_now.AddDate(0, 0, -3)),
+				SecretVersionsToStages: map[string][]*string{
+					"006": {
+						_s("AWSCURRENT"),
+					},
+					"005": {
+						_s("AWSPREVIOUS"),
+					},
+				},
 			},
 		},
 	}
@@ -161,6 +205,14 @@ var _ = BeforeSuite(func(done Done) {
 	MockSecretsOutput.SecretsValueOutput = &secretsmanager.GetSecretValueOutput{
 		SecretString: _s(`{"database_name":"secretDB","database_pass":"cupofcoffee", "database_name1":"secretDB02"}`),
 		VersionId:    _s(`005`),
+	}
+
+	MockSecretsOutput.DescribeSecretOutput = &secretsmanager.DescribeSecretOutput{
+		ARN: _s("arn:aws:secretsmanager:us-west-2:123456789012:secret:random/aws/secret003-abc"),
+		Tags: []*secretsmanager.Tag{
+			keyValue("k8s.contentful.com/namespace_type/secret-sync-test2", "1"),
+			keyValue("k8s.contentful.com/namespace_type/secret-sync-test3", "1"),
+		},
 	}
 
 	// mock the manager setup
@@ -172,10 +224,11 @@ var _ = BeforeSuite(func(done Done) {
 		GetSMClient: func(IAMRole string) (secretsmanageriface.SecretsManagerAPI, error) {
 			return &smSvc, nil
 		},
-		RoleValidator: &mockRoleValidator{},
-		gauges:        map[string]prometheus.Gauge{},
-		sync_state:    map[string]bool{},
-		PollInterval:  3 * time.Second,
+		RoleValidator:      &mockRoleValidator{},
+		NamespaceValidator: &mockNamespaceValidator{},
+		gauges:             map[string]prometheus.Gauge{},
+		sync_state:         map[string]bool{},
+		PollInterval:       3 * time.Second,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -194,8 +247,23 @@ var _ = BeforeSuite(func(done Done) {
 			Name: TEST_NAMESPACE,
 		},
 	}
+	toCreate2 := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: TEST_NAMESPACE2,
+		},
+	}
+	toCreate3 := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: TEST_NAMESPACE3,
+		},
+	}
 
 	err = k8sClient.Create(context.Background(), toCreate)
+	Expect(err).To(BeNil())
+	err = k8sClient.Create(context.Background(), toCreate2)
+	Expect(err).To(BeNil())
+	err = k8sClient.Create(context.Background(), toCreate3)
+	Expect(err).To(BeNil())
 	Expect(err).To(BeNil())
 
 	close(done)
