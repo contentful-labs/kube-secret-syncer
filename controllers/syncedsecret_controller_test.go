@@ -46,7 +46,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
-					SecretMetadata: metav1.ObjectMeta{
+					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
 					},
@@ -112,7 +112,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
-					SecretMetadata: metav1.ObjectMeta{
+					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
 					},
@@ -238,7 +238,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
-					SecretMetadata: metav1.ObjectMeta{
+					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
 					},
@@ -309,7 +309,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
-					SecretMetadata: metav1.ObjectMeta{
+					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
 					},
@@ -436,7 +436,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
-					SecretMetadata: metav1.ObjectMeta{
+					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
 					},
@@ -493,7 +493,7 @@ var _ = Describe("SyncedSecret Controller", func() {
 					ResourceVersion: resourceVersion,
 				},
 				Spec: secretsv1.SyncedSecretSpec{
-					SecretMetadata: metav1.ObjectMeta{
+					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
 					},

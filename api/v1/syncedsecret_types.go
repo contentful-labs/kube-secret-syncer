@@ -61,14 +61,21 @@ type SecretField struct {
 	ValueFrom *ValueFrom `json:"valueFrom,omitempty"`
 }
 
+type SecretMetadata struct {
+	Name              string            `json:"name,omitempty"`
+	Namespace         string            `json:"namespace,omitempty"`
+	Labels            map[string]string `json:"labels,omitempty"`
+	Annotations       map[string]string `json:"annotations,omitempty"`
+	CreationTimestamp metav1.Time       `json:"creationTimestamp,omitempty"`
+}
+
 // SyncedSecretSpec defines the desired state of SyncedSecret
 type SyncedSecretSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Secret Metadata
-	SecretMetadata metav1.ObjectMeta `json:"secretMetadata,omitempty"`
-
+	SecretMetadata SecretMetadata `json:"secretMetadata,omitempty"`
 	// IAMRole
 	// +optional
 	IAMRole *string `json:"IAMRole"`
