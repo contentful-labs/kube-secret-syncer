@@ -49,6 +49,9 @@ var _ = Describe("SyncedSecret Controller", func() {
 					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
+						CreationTimestamp: metav1.Time{
+							Time: time_now,
+						},
 					},
 					IAMRole: _s("test"),
 					Data: []*secretsv1.SecretField{
@@ -115,6 +118,9 @@ var _ = Describe("SyncedSecret Controller", func() {
 					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
+						CreationTimestamp: metav1.Time{
+							Time: time_now,
+						},
 					},
 					IAMRole: _s("test"),
 					Data: []*secretsv1.SecretField{
@@ -241,6 +247,9 @@ var _ = Describe("SyncedSecret Controller", func() {
 					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
+						CreationTimestamp: metav1.Time{
+							Time: time_now,
+						},
 					},
 					AWSAccountID: _s("12345678910"),
 					IAMRole:      _s("test"),
@@ -312,6 +321,9 @@ var _ = Describe("SyncedSecret Controller", func() {
 					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
+						CreationTimestamp: metav1.Time{
+							Time: time_now,
+						},
 					},
 					IAMRole:      _s("test"),
 					AWSAccountID: _s("12345678910"),
@@ -439,6 +451,9 @@ var _ = Describe("SyncedSecret Controller", func() {
 					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
+						CreationTimestamp: metav1.Time{
+							Time: time_now,
+						},
 					},
 					AWSAccountID: _s("12345678910"),
 					IAMRole:      _s("test"),
@@ -496,6 +511,9 @@ var _ = Describe("SyncedSecret Controller", func() {
 					SecretMetadata: secretsv1.SecretMetadata{
 						Name:      secretKey.Name,
 						Namespace: secretKey.Namespace,
+						CreationTimestamp: metav1.Time{
+							Time: time_now,
+						},
 					},
 					IAMRole:      _s("test"),
 					AWSAccountID: _s("12345678910"),
