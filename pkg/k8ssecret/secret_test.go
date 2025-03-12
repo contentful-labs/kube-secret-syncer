@@ -77,7 +77,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -120,7 +120,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -172,7 +172,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -224,7 +224,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -260,7 +260,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -312,7 +312,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -364,7 +364,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -413,7 +413,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
@@ -446,7 +446,7 @@ func TestGenerateSecret(t *testing.T) {
 						Namespace: "secret-namespace",
 					},
 					Spec: secretsv1.SyncedSecretSpec{
-						SecretMetadata: metav1.ObjectMeta{
+						SecretMetadata: secretsv1.SecretMetadata{
 							Name:      "secret-name",
 							Namespace: "secret-namespace",
 							Annotations: map[string]string{
