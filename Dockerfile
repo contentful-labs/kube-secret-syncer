@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.23 as base
+FROM golang:1.25 AS base
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -16,7 +16,7 @@ COPY controllers/ controllers/
 COPY pkg/ pkg/
 
 # Test image
-FROM base as test
+FROM base AS test
 
 RUN curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz | \
   tar -xz -C /tmp/ && \
@@ -28,7 +28,7 @@ COPY config/ config/
 
 ENV PATH=$PATH:/usr/local/kubebuilder/bin
 
-FROM base as builder
+FROM base AS builder
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go

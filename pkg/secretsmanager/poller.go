@@ -92,7 +92,7 @@ func (p *Poller) poll(ticker *time.Ticker) {
 				p.errs <- errors.WithMessagef(err, "failed polling secrets")
 			} else {
 				p.PolledSecrets = polledSecrets
-				p.Log.Info("Fetched secrets from AWS", "numberOfSecres", len(p.PolledSecrets))
+				p.Log.Info("Fetched secrets from AWS", "numberOfSecrets", len(p.PolledSecrets))
 			}
 
 		case <-p.quit:
