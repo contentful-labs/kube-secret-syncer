@@ -138,9 +138,11 @@ Kube-secret-syncer maintains both the list of AWS Secrets as well as their value
 
 ## [Security model](#security-model)
 
-By default, kube-secret-syncer will use the Kubernetes node's IAM role to list and retrieve the secrets. However, when
-synced secrets have an IAMRole field defined, kube-secret-syncer will assume that role before retrieving the secret. This
-implies that the role specified by IAMRole can be assumed by the role of the Kubernetes node kube-secret-syncer runs on.
+Kube-secret-syncer relies on the AWS Go SDK to communicate with AWS - and supports the different ways of
+authenticating to AWS described in the [AWS Go SDK documentation](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials).
+
+When synced secrets have an IAMRole field defined, kube-secret-syncer will assume that role before retrieving the
+secret. This implies that the role specified by IAMRole can be assumed by the default role kube-secret-syncer uses.
 
 To ensure a specific namespace only has access to the secrets it needs to, kube-secret-syncer will use the
 "iam.amazonaws.com/allowed-roles" annotation on the namespace (originally used by kube2iam) to validate that this
