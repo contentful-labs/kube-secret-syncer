@@ -1,6 +1,6 @@
 .PHONY: examples
 # Image URL to use all building/pushing image targets
-IMG ?= contentful-labs/kube-secret-syncer
+IMG ?= ghcr.io/contentful-labs/kube-secret-syncer
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 # Directory for storing generated manifests
@@ -65,7 +65,7 @@ generate: controller-gen
 # Run tests in a container
 docker-test:
 	docker build . -t ${IMG}-test --target=test
-	docker run -it -v $(PWD):/repo --rm ${IMG}-test go test -v ./... -coverprofile /repo/cover.out -coverpkg ./controllers/...,./pkg/...
+	docker run -v $(PWD):/repo --rm ${IMG}-test go test -v ./... -coverprofile /repo/cover.out -coverpkg ./controllers/...,./pkg/...
 
 # Build the docker image
 docker-build: 
